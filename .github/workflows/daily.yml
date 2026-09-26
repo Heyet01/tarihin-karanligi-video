@@ -1,0 +1,75 @@
+name: Gunluk Video
+
+on:
+  schedule:
+    - cron: "35 15 * * *"   # 18:35 Turkiye saati; video ~19:00 civari yayinda
+  workflow_dispatch: {}
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: daily-video
+  cancel-in-progress: false
+
+jobs:
+  video:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    environment:
+      name: github-pages
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Kurulum
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq ffmpeg
+          pip install -q numpy pillow edge-tts fonttools
+          mkdir -p assets
+          curl -sSL -o /tmp/Oswald.ttf "https://github.com/google/fonts/raw/main/ofl/oswald/Oswald%5Bwght%5D.ttf"
+          fonttools varLib.instancer /tmp/Oswald.ttf wght=700 -q -o assets/Oswald-Bold.ttf
+
+      - name: Senaryo al ve videoyu uret
+        env:
+          MAKE_WEBHOOK_URL: ${{ secrets.MAKE_WEBHOOK_URL }}
+          MAKE_TOKEN: ${{ secrets.MAKE_TOKEN }}
+        run: python pipeline.py
+
+      - uses: actions/configure-pages@v5
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: out/site
+
+      - id: deploy
+        uses: actions/deploy-pages@v4
+
+      - name: Make'e haber ver (yayinla)
+        env:
+          MAKE_WEBHOOK_URL: ${{ secrets.MAKE_WEBHOOK_URL }}
+          MAKE_TOKEN: ${{ secrets.MAKE_TOKEN }}
+        run: |
+          URL=$(jq -r .video_ig_url out/notify.json)
+          for i in $(seq 1 30); do
+            code=$(curl -s -o /dev/null -w "%{http_code}" -I "$URL")
+            [ "$code" = "200" ] && break
+            sleep 10
+          done
+          echo "video url status: $code"
+          jq --arg t "$MAKE_TOKEN" '. + {token: $t}' out/notify.json > /tmp/payload.json
+          curl -sS -X POST "$MAKE_WEBHOOK_URL" -H "Content-Type: application/json" --data @/tmp/payload.json
+
+      - name: Hata bildirimi
+        if: failure()
+        env:
+          MAKE_WEBHOOK_URL: ${{ secrets.MAKE_WEBHOOK_URL }}
+          MAKE_TOKEN: ${{ secrets.MAKE_TOKEN }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          MSG=$(cat out/error.txt 2>/dev/null || echo "Bilinmeyen hata")
+          jq -n --arg t "$MAKE_TOKEN" --arg m "$MSG" --arg u "$RUN_URL" \
+            '{action:"error", token:$t, message:$m, run_url:$u}' > /tmp/err.json
+          curl -sS -X POST "$MAKE_WEBHOOK_URL" -H "Content-Type: application/json" --data @/tmp/err.json

@@ -1,0 +1,29 @@
+name: Haftalik Viral Analiz
+
+on:
+  schedule:
+    - cron: "0 5 * * 1"   # Pazartesi 08:00 Turkiye saati
+  workflow_dispatch: {}
+
+permissions:
+  contents: write
+
+jobs:
+  analyze:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Nisi tara ve raporla
+        env:
+          MAKE_WEBHOOK_URL: ${{ secrets.MAKE_WEBHOOK_URL }}
+          MAKE_TOKEN: ${{ secrets.MAKE_TOKEN }}
+        run: python analyze.py
+
+      - name: Dersleri kaydet
+        run: |
+          git config user.name "tarihin-karanligi-bot"
+          git config user.email "tarihin-karanligi-bot@users.noreply.github.com"
+          git add insights.txt
+          git diff --cached --quiet || (git commit -m "Haftalik viral analiz" && git push)

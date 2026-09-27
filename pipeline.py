@@ -74,6 +74,10 @@ def main():
         "video_yt_url": base + "video_yt.mp4",
         "cover_url": base + "cover.jpg",
     }
+    # ASCII-safe snippet so Make can set the Turkish language on YouTube after upload
+    meta["yt_snippet"] = json.dumps({"title": meta["title"], "description": meta["description"],
+                                     "categoryId": "27", "defaultLanguage": "tr",
+                                     "defaultAudioLanguage": "tr"})
     (dest / "meta.json").write_text(json.dumps(meta, ensure_ascii=False, indent=1), encoding="utf-8")
     (site / ".nojekyll").write_text("")
     (site / "index.html").write_text(

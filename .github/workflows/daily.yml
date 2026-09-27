@@ -3,6 +3,8 @@ name: Gunluk Video
 on:
   schedule:
     - cron: "35 15 * * *"   # 18:35 Turkiye saati; video ~19:00 civari yayinda
+    - cron: "10 17 * * *"   # yedek: 20:10 (GitHub zamanlayicisi gecikir/atlarsa)
+    - cron: "40 18 * * *"   # yedek: 21:40
   workflow_dispatch: {}
 
 permissions:
@@ -21,9 +23,22 @@ jobs:
     environment:
       name: github-pages
     steps:
+      - name: Bugun zaten paylasildi mi?
+        id: guard
+        run: |
+          TODAY=$(date -u +%Y-%m-%d)
+          if [ "${{ github.event_name }}" = "schedule" ] && curl -s -m 20 "https://heyet01.github.io/tarihin-karanligi-video/" | grep -q "$TODAY-"; then
+            echo "Bugunun videosu zaten yayinda, atlaniyor."
+            echo "skip=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "skip=false" >> "$GITHUB_OUTPUT"
+          fi
+
       - uses: actions/checkout@v4
+        if: steps.guard.outputs.skip != 'true'
 
       - name: Kurulum
+        if: steps.guard.outputs.skip != 'true'
         run: |
           sudo apt-get update -qq
           sudo apt-get install -y -qq ffmpeg
@@ -33,21 +48,26 @@ jobs:
           fonttools varLib.instancer /tmp/Oswald.ttf wght=700 -q -o assets/Oswald-Bold.ttf
 
       - name: Senaryo al ve videoyu uret
+        if: steps.guard.outputs.skip != 'true'
         env:
           MAKE_WEBHOOK_URL: ${{ secrets.MAKE_WEBHOOK_URL }}
           MAKE_TOKEN: ${{ secrets.MAKE_TOKEN }}
         run: python pipeline.py
 
       - uses: actions/configure-pages@v5
+        if: steps.guard.outputs.skip != 'true'
 
       - uses: actions/upload-pages-artifact@v3
+        if: steps.guard.outputs.skip != 'true'
         with:
           path: out/site
 
       - id: deploy
+        if: steps.guard.outputs.skip != 'true'
         uses: actions/deploy-pages@v4
 
       - name: Make'e haber ver (yayinla)
+        if: steps.guard.outputs.skip != 'true'
         env:
           MAKE_WEBHOOK_URL: ${{ secrets.MAKE_WEBHOOK_URL }}
           MAKE_TOKEN: ${{ secrets.MAKE_TOKEN }}
@@ -70,6 +90,6 @@ jobs:
           RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
         run: |
           MSG=$(cat out/error.txt 2>/dev/null || echo "Bilinmeyen hata")
-          jq -n --arg t "$MAKE_TOKEN" --arg m "$MSG" --arg u "$RUN_URL" \
+         jq -n --arg t "$MAKE_TOKEN" --arg m "$MSG" --arg u "$RUN_URL" \
             '{action:"error", token:$t, message:$m, run_url:$u}' > /tmp/err.json
           curl -sS -X POST "$MAKE_WEBHOOK_URL" -H "Content-Type: application/json" --data @/tmp/err.json

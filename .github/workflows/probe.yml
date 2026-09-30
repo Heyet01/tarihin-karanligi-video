@@ -1,0 +1,47 @@
+name: Test (gorsel + kare)
+
+on:
+  workflow_dispatch:
+    inputs:
+      folder:
+        description: "Pages klasoru"
+        required: false
+        default: ""
+
+permissions:
+  contents: write
+
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - name: Test
+        env:
+          POLLINATIONS_TOKEN: ${{ secrets.POLLINATIONS_TOKEN }}
+          HORDE_API_KEY: ${{ secrets.HORDE_API_KEY }}
+          FOLDER: ${{ inputs.folder }}
+        run: |
+          pip install -q numpy pillow
+          mkdir -p probe
+          if [ -n "$FOLDER" ]; then
+            curl -sSL -o /tmp/v.mp4 "https://heyet01.github.io/tarihin-karanligi-video/$FOLDER/video_ig.mp4" || true
+            for s in 0.6 1.5 4 10 20 30; do
+              ffmpeg -loglevel error -y -ss $s -i /tmp/v.mp4 -frames:v 1 -vf scale=432:-2 -q:v 4 probe/f_$s.jpg || true
+            done
+            ffprobe -v error -show_entries format=duration -of csv=p=0 /tmp/v.mp4 > probe/duration.txt || true
+          fi
+          python - <<'EOF' 2>&1 | tee probe/log.txt
+          import time, render
+          p = "a dark stone Ottoman fortress at night, torchlight, fog, cinematic, photorealistic"
+          t = time.time(); ok = render.fetch_pollinations(p, "probe/poll.jpg", 7, tries=1)
+          print("POLLINATIONS", ok, round(time.time() - t), "s")
+          t = time.time(); ok = render.fetch_horde(p, "probe/horde.jpg", 7, time.time() + 600)
+          print("HORDE", ok, round(time.time() - t), "s")
+          EOF
+          for f in probe/poll.jpg probe/horde.jpg; do [ -f $f ] && python -c "from PIL import Image; im=Image.open('$f'); im.thumbnail((432,768)); im.save('$f', quality=80)"; done
+          git config user.name "tarihin-karanligi-bot"
+          git config user.email "tarihin-karanligi-bot@users.noreply.github.com"
+          git add probe
+          git commit -m "Test sonucu" && git push || true

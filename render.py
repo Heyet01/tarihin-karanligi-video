@@ -568,12 +568,13 @@ def render(job, workdir, out_ig, out_yt, offline=False, fast=False):
     if peak > 0:
         voice_track *= 0.89 / peak
     sfx = np.zeros(n, np.float32)
-    for k, st in enumerate(starts):   # swoosh on every cut and on every mid-scene punch-in
-        for tt in ([st] if k else []) + [st + durs[k] * 0.5]:
-            w_ = whoosh(seed + 97 * k + int(tt * 10))
-            i0 = max(0, int((tt - 0.28) * SR))
-            seg = w_[: max(0, min(len(w_), n - i0))]
-            sfx[i0:i0 + len(seg)] += seg
+    if os.environ.get("TRANSITION_SFX") == "1":   # off by default (channel owner asked for no swoosh)
+        for k, st in enumerate(starts):
+            for tt in ([st] if k else []) + [st + durs[k] * 0.5]:
+                w_ = whoosh(seed + 97 * k + int(tt * 10))
+                i0 = max(0, int((tt - 0.28) * SR))
+                seg = w_[: max(0, min(len(w_), n - i0))]
+                sfx[i0:i0 + len(seg)] += seg
     mix = voice_track + drone(n, seed) + sfx
     mix = np.tanh(mix * 1.1) / np.tanh(1.1)
     wav_path = workdir / "mix.wav"

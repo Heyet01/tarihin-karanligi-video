@@ -1,0 +1,4 @@
+16:20:16   pollinations[anon] try 1: The read operation timed out
+POLLINATIONS False 126 s
+16:20:50   horde ok (stable_diffusion)
+HORDE True 28 s

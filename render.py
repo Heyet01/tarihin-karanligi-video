@@ -199,6 +199,24 @@ def drone(n, seed):
     return out.astype(np.float32)
 
 
+def whoosh(seed, dur=0.42, amp=0.16):
+    """Short airy swoosh for cuts: band-limited noise with a rising pitch and a fast swell."""
+    rng = np.random.default_rng(seed)
+    m = int(SR * dur)
+    x = rng.standard_normal(m).astype(np.float32)
+    # crude band-pass: difference of two moving averages whose width shrinks over time (rising sweep)
+    cs = np.concatenate([[0.0], np.cumsum(x)])
+    idx = np.arange(m)
+    out = np.zeros(m, np.float32)
+    for k0, k1 in ((40, 8), ):
+        kk = (k0 + (k1 - k0) * idx / m).astype(int) + 1
+        lo, hi = np.clip(idx - kk, 0, m), np.clip(idx + kk, 0, m)
+        out += ((cs[hi] - cs[lo]) / np.maximum(hi - lo, 1)).astype(np.float32)
+    env = np.sin(np.pi * np.clip(idx / m, 0, 1)) ** 2
+    out = out / (np.abs(out).max() + 1e-6) * env * amp
+    return out.astype(np.float32)
+
+
 # ----------------------------------------------------------------- overlays
 def gauss_sprite(r):
     k = int(r * 3) + 1
@@ -446,7 +464,14 @@ def render(job, workdir, out_ig, out_yt, offline=False, fast=False):
     peak = np.abs(voice_track).max()
     if peak > 0:
         voice_track *= 0.89 / peak
-    mix = voice_track + drone(n, seed)
+    sfx = np.zeros(n, np.float32)
+    for k, st in enumerate(starts):   # swoosh on every cut and on every mid-scene punch-in
+        for tt in ([st] if k else []) + [st + durs[k] * 0.5]:
+            w_ = whoosh(seed + 97 * k + int(tt * 10))
+            i0 = max(0, int((tt - 0.28) * SR))
+            seg = w_[: max(0, min(len(w_), n - i0))]
+            sfx[i0:i0 + len(seg)] += seg
+    mix = voice_track + drone(n, seed) + sfx
     mix = np.tanh(mix * 1.1) / np.tanh(1.1)
     wav_path = workdir / "mix.wav"
     with wave.open(str(wav_path), "wb") as w:
@@ -507,6 +532,10 @@ def render(job, workdir, out_ig, out_yt, offline=False, fast=False):
         lt, d = t - starts[si], durs[si]
         u = lt / d
         s, tx, ty, rot = camera(cams[si], u, t, d, phases[si])
+        if u >= 0.5:   # mid-scene punch-in: a hard "new shot" roughly every 2 seconds
+            s *= 1.14
+            tx *= 0.6
+            ty = ty * 0.6 + (-40 if si % 2 else 40)
         fr = imgs[si].transform((W, H), Image.AFFINE, affine(s, tx, ty, rot), resample=Image.BICUBIC)
         frame = np.asarray(fr).astype(np.float32)
         # sliding shadows

@@ -1,0 +1,88 @@
+diff --git a/render.py b/render.py
+index e5113e0..30a0479 100644
+--- a/render.py
++++ b/render.py
+@@ -92,7 +92,7 @@ def _http(url, headers=None, data=None, timeout=60, method=None):
+         return r.read()
+ 
+ 
+-def fetch_pollinations(prompt, path, seed, tries=2):
++def fetch_pollinations(prompt, path, seed, tries=None):
+     """Registered key (gen.pollinations.ai) first, then the old anonymous endpoint."""
+     token = os.environ.get("POLLINATIONS_TOKEN", "").strip()
+     q = {"width": 768, "height": 1344, "model": "flux", "nologo": "true",
+@@ -103,10 +103,11 @@ def fetch_pollinations(prompt, path, seed, tries=2):
+         targets.append(("gen", "https://gen.pollinations.ai/image/" + enc + "?" + urllib.parse.urlencode(q),
+                         {"Authorization": f"Bearer {token}"}))
+     targets.append(("anon", "https://image.pollinations.ai/prompt/" + enc + "?" + urllib.parse.urlencode(q), {}))
++    tries = tries or (2 if token else 1)   # anonymous access is mostly 402 now: one quick try, then Horde
+     for attempt in range(tries):
+         for name, url, hdr in targets:
+             try:
+-                return _save_image(_http(url, hdr, timeout=120), path)
++                return _save_image(_http(url, hdr, timeout=120 if name == "gen" else 60), path)
+             except Exception as e:  # noqa: BLE001
+                 log(f"  pollinations[{name}] try {attempt + 1}: {str(e)[:90]}")
+         time.sleep(6 * (attempt + 1))
+@@ -123,10 +124,17 @@ def fetch_horde(prompt, path, seed, deadline):
+             "models": HORDE_MODELS, "nsfw": False, "censor_nsfw": True, "r2": False,
+             "slow_workers": True, "trusted_workers": False}
+     base = "https://aihorde.net/api/v2/generate/"
+-    try:
+-        jid = json.loads(_http(base + "async", hdr, json.dumps(body).encode(), 40))["id"]
+-    except Exception as e:  # noqa: BLE001
+-        log(f"  horde submit failed: {str(e)[:120]}")
++    jid = None
++    for attempt in range(5):   # anonymous users may hit a parallel-request limit: wait and retry
++        try:
++            jid = json.loads(_http(base + "async", hdr, json.dumps(body).encode(), 40))["id"]
++            break
++        except Exception as e:  # noqa: BLE001
++            log(f"  horde submit try {attempt + 1} failed: {str(e)[:120]}")
++            if time.time() + 60 > deadline:
++                return False
++            time.sleep(20 + 10 * attempt)
++    if not jid:
+         return False
+     while time.time() < deadline:
+         time.sleep(8)
+@@ -518,11 +526,14 @@ def render(job, workdir, out_ig, out_yt, offline=False, fast=False):
+     for i, sc in enumerate(scenes):
+         p, ok = paths[i], got.get(i, False)
+         mode = str(sc.get("color_mode", "WARM")).upper()
++        good = [j for j in range(len(scenes)) if got.get(j)]
+         if ok:
+             images_ok += 1
+             im = cover_resize(Image.open(p).convert("RGB"), SW, SH)
+-        elif imgs:
+-            im = imgs[-1].transpose(Image.FLIP_LEFT_RIGHT)
++        elif good:   # reuse the nearest real image (mirrored + cropped) instead of a blank dark frame
++            j = min(good, key=lambda k: (abs(k - i), k))
++            im = cover_resize(Image.open(paths[j]).convert("RGB"), SW, SH).transpose(Image.FLIP_LEFT_RIGHT)
++            im = cover_resize(im.crop((SW // 10, SH // 10, SW - SW // 10, SH - SH // 10)), SW, SH)
+         else:
+             im = fallback_image(seed)
+         imgs.append(grade(im, mode))
+@@ -658,8 +669,10 @@ def render(job, workdir, out_ig, out_yt, offline=False, fast=False):
+             total_h = cov1.height + (cov2.height if cov2 else 0) - 80 - gap_y
+             y0 = int(H * 0.44 - total_h / 2) - 40
+             blend(frame, cov1, (W - cov1.width) // 2, y0, ca)
++            cov_bottom = y0 + cov1.height - 40
+             if cov2:
+                 blend(frame, cov2, (W - cov2.width) // 2, y0 + cov1.height - 80 + gap_y, ca)
++                cov_bottom = y0 + cov1.height - 80 + gap_y + cov2.height - 40
+         # captions
+         for ck, (a, b, wlist) in enumerate(chunks):
+             if a - 0.04 <= t <= b + 0.12:
+@@ -673,7 +686,10 @@ def render(job, workdir, out_ig, out_yt, offline=False, fast=False):
+                 ci = cap_cache[key]
+                 ca = min(1.0, (t - a + 0.04) / 0.08)
+                 # centred, just below the cover title and above the Shorts UI (title/channel name)
+-                blend(frame, ci, (W - ci.width) // 2, int(H * 0.585) - ci.height // 2, ca)
++                cy = int(H * 0.585)
++                if t < 2.4 and cov1:   # keep the caption clear of the big cover title
++                    cy = max(cy, cov_bottom + ci.height // 2 - 10)
++                blend(frame, ci, (W - ci.width) // 2, cy - ci.height // 2, ca)
+                 break
+         ff.stdin.write(np.clip(frame, 0, 255).astype(np.uint8).tobytes())
+         if f % 120 == 0:

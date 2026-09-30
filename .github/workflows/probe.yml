@@ -24,9 +24,11 @@ jobs:
           FOLDER: ${{ inputs.folder }}
         run: |
           pip install -q numpy pillow
+          command -v ffmpeg || (sudo apt-get update -qq && sudo apt-get install -y -qq ffmpeg)
           mkdir -p probe
           if [ -n "$FOLDER" ]; then
             curl -sSL -o /tmp/v.mp4 "https://heyet01.github.io/tarihin-karanligi-video/$FOLDER/video_ig.mp4" || true
+            curl -sSL -o probe/meta.json "https://heyet01.github.io/tarihin-karanligi-video/$FOLDER/meta.json" || true
             for s in 0.6 1.5 4 10 20 30; do
               ffmpeg -loglevel error -y -ss $s -i /tmp/v.mp4 -frames:v 1 -vf scale=432:-2 -q:v 4 probe/f_$s.jpg || true
             done

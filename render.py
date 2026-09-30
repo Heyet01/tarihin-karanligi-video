@@ -69,30 +69,121 @@ def build_prompt(scene):
     return f"{desc}, {COLOR_MODES.get(mode, COLOR_MODES['WARM'])}, {STYLE}"
 
 
-def fetch_image(prompt, path, seed):
-    token = os.environ.get("POLLINATIONS_TOKEN", "")
+UA = "tarihin-karanligi-bot/1.0"
+HORDE_NEG = "text, letters, watermark, logo, signature, blurry, deformed, extra fingers, cartoon, anime"
+HORDE_MODELS = ["AlbedoBase XL (SDXL)", "Juggernaut XL", "ICBINP XL", "Deliberate",
+                "Realistic Vision", "Dreamshaper", "stable_diffusion"]
+
+
+def _save_image(data, path):
+    if len(data) < 15000:
+        raise RuntimeError(f"image too small ({len(data)} bytes)")
+    import io
+    im = Image.open(io.BytesIO(data)).convert("RGB")
+    im.save(path, "JPEG", quality=94)
+    return True
+
+
+def _http(url, headers=None, data=None, timeout=60, method=None):
+    h = {"User-Agent": UA}
+    h.update(headers or {})
+    req = urllib.request.Request(url, headers=h, data=data, method=method)
+    with urllib.request.urlopen(req, timeout=timeout) as r:
+        return r.read()
+
+
+def fetch_pollinations(prompt, path, seed, tries=2):
+    """Registered key (gen.pollinations.ai) first, then the old anonymous endpoint."""
+    token = os.environ.get("POLLINATIONS_TOKEN", "").strip()
     q = {"width": 768, "height": 1344, "model": "flux", "nologo": "true",
          "seed": seed, "enhance": "false", "private": "true", "referrer": "tarihinkaranligi"}
-    url = ("https://image.pollinations.ai/prompt/" + urllib.parse.quote(prompt[:1500])
-           + "?" + urllib.parse.urlencode(q))
-    headers = {"User-Agent": "tarihin-karanligi-bot/1.0"}
+    enc = urllib.parse.quote(prompt[:1500])
+    targets = []
     if token:
-        headers["Authorization"] = f"Bearer {token}"
-    for attempt in range(5):
-        try:
-            req = urllib.request.Request(url, headers=headers)
-            with urllib.request.urlopen(req, timeout=180) as r:
-                data = r.read()
-            if len(data) < 20000:
-                raise RuntimeError(f"image too small ({len(data)} bytes)")
-            Path(path).write_bytes(data)
-            Image.open(path).verify()
-            return True
-        except Exception as e:  # noqa: BLE001
-            wait = 10 * (attempt + 1)
-            log(f"  image attempt {attempt + 1} failed: {e}; retry in {wait}s")
-            time.sleep(wait)
+        targets.append(("gen", "https://gen.pollinations.ai/image/" + enc + "?" + urllib.parse.urlencode(q),
+                        {"Authorization": f"Bearer {token}"}))
+    targets.append(("anon", "https://image.pollinations.ai/prompt/" + enc + "?" + urllib.parse.urlencode(q), {}))
+    for attempt in range(tries):
+        for name, url, hdr in targets:
+            try:
+                return _save_image(_http(url, hdr, timeout=120), path)
+            except Exception as e:  # noqa: BLE001
+                log(f"  pollinations[{name}] try {attempt + 1}: {str(e)[:90]}")
+        time.sleep(6 * (attempt + 1))
     return False
+
+
+def fetch_horde(prompt, path, seed, deadline):
+    """Stable Horde (free, community GPUs). Anonymous key works; a free registered key is faster."""
+    key = os.environ.get("HORDE_API_KEY", "").strip() or "0000000000"
+    hdr = {"apikey": key, "Client-Agent": "tarihin-karanligi:1.0:github", "Content-Type": "application/json"}
+    body = {"prompt": prompt[:850] + " ### " + HORDE_NEG,
+            "params": {"width": 576, "height": 1024, "steps": 24, "cfg_scale": 6.5, "n": 1,
+                       "sampler_name": "k_euler_a", "karras": True, "seed": str(seed)},
+            "models": HORDE_MODELS, "nsfw": False, "censor_nsfw": True, "r2": False,
+            "slow_workers": True, "trusted_workers": False}
+    base = "https://aihorde.net/api/v2/generate/"
+    try:
+        jid = json.loads(_http(base + "async", hdr, json.dumps(body).encode(), 40))["id"]
+    except Exception as e:  # noqa: BLE001
+        log(f"  horde submit failed: {str(e)[:120]}")
+        return False
+    while time.time() < deadline:
+        time.sleep(8)
+        try:
+            chk = json.loads(_http(base + "check/" + jid, hdr, timeout=30))
+        except Exception:  # noqa: BLE001
+            continue
+        if chk.get("faulted") or not chk.get("is_possible", True):
+            log(f"  horde job impossible/faulted: {chk}")
+            break
+        if chk.get("done"):
+            try:
+                st = json.loads(_http(base + "status/" + jid, hdr, timeout=60))
+                g = (st.get("generations") or [{}])[0]
+                if g.get("censored"):
+                    log("  horde image censored")
+                    return False
+                img = g.get("img", "")
+                import base64
+                data = _http(img, timeout=60) if img.startswith("http") else base64.b64decode(img)
+                log(f"  horde ok ({g.get('model')})")
+                return _save_image(data, path)
+            except Exception as e:  # noqa: BLE001
+                log(f"  horde fetch failed: {str(e)[:120]}")
+                return False
+    try:  # free the queue slot
+        _http(base + "status/" + jid, hdr, timeout=20, method="DELETE")
+    except Exception:  # noqa: BLE001
+        pass
+    log("  horde timed out")
+    return False
+
+
+def fetch_image(prompt, path, seed, deadline=None):
+    deadline = deadline or (time.time() + 600)
+    if fetch_pollinations(prompt, path, seed):
+        return True
+    return fetch_horde(prompt, path, seed, deadline)
+
+
+def fetch_all_images(prompts, paths, seed, budget=900):
+    """Fetch every scene image in parallel with one overall time budget (seconds)."""
+    from concurrent.futures import ThreadPoolExecutor
+    deadline = time.time() + budget
+
+    def one(i):
+        time.sleep(i * 1.5)  # stagger requests a little
+        try:
+            ok = fetch_image(prompts[i], paths[i], seed + i, deadline)
+        except Exception as e:  # noqa: BLE001
+            log(f"  image {i + 1} error: {e}")
+            ok = False
+        log(f"image {i + 1}/{len(prompts)}: {'ok' if ok else 'FALLBACK'}")
+        return ok
+
+    with ThreadPoolExecutor(max_workers=4) as ex:
+        return list(ex.map(one, range(len(prompts))))
 
 
 def cover_resize(img, w, h):
@@ -416,15 +507,16 @@ def render(job, workdir, out_ig, out_yt, offline=False, fast=False):
 
     # 1) images
     imgs, images_ok = [], 0
+    paths = [Path(sc["image_path"]) if sc.get("image_path") else workdir / f"img{i}.jpg"
+             for i, sc in enumerate(scenes)]
+    need = [i for i, sc in enumerate(scenes) if not sc.get("image_path")]
+    got = {i: True for i in range(len(scenes)) if i not in need}
+    if need and not offline:
+        res = fetch_all_images([build_prompt(scenes[i]) for i in need], [paths[i] for i in need],
+                               seed + need[0], budget=int(os.environ.get("IMAGE_BUDGET", "900")))
+        got.update(dict(zip(need, res)))
     for i, sc in enumerate(scenes):
-        p = workdir / f"img{i}.jpg"
-        if sc.get("image_path"):
-            ok = True
-            p = Path(sc["image_path"])
-        else:
-            log(f"image {i + 1}/{len(scenes)}")
-            ok = (not offline) and fetch_image(build_prompt(sc), p, seed + i)
-            time.sleep(3)
+        p, ok = paths[i], got.get(i, False)
         mode = str(sc.get("color_mode", "WARM")).upper()
         if ok:
             images_ok += 1

@@ -269,6 +269,36 @@ def fit_text(text, max_w, size, **kw):
     return text_img(text, size, **kw)
 
 
+CAP_WHITE = (255, 255, 255, 255)
+CAP_YELLOW = (255, 214, 10, 255)
+
+
+def karaoke_img(words, active, max_w, size=74, stroke=7):
+    """One caption line; the word being spoken (index `active`) is yellow and slightly bigger."""
+    while True:
+        font = ImageFont.truetype(FONT, size)
+        big = ImageFont.truetype(FONT, int(size * 1.12))
+        fonts = [big if i == active else font for i in range(len(words))]
+        space = font.getlength(" ")
+        widths = [f.getlength(w) for f, w in zip(fonts, words)]
+        total = sum(widths) + space * (len(words) - 1) + stroke * 2
+        if total <= max_w or size <= 40:
+            break
+        size -= 4
+    asc, desc = big.getmetrics()
+    pad = 30
+    im = Image.new("RGBA", (int(total) + pad * 2, asc + desc + pad * 2), (0, 0, 0, 0))
+    d = ImageDraw.Draw(im)
+    x = pad + stroke
+    for i, (f, w) in enumerate(zip(fonts, words)):
+        a2, _ = f.getmetrics()
+        y = pad + (asc - a2)
+        d.text((x, y), w, font=f, fill=CAP_YELLOW if i == active else CAP_WHITE,
+               stroke_width=stroke, stroke_fill=(0, 0, 0, 255))
+        x += widths[i] + space
+    return im
+
+
 def blend(frame, rgba, x, y, alpha=1.0):
     a = np.asarray(rgba).astype(np.float32)
     h, w = a.shape[:2]
@@ -425,17 +455,17 @@ def render(job, workdir, out_ig, out_yt, offline=False, fast=False):
         w.setframerate(SR)
         w.writeframes((np.clip(mix, -1, 1) * 32767).astype(np.int16).tobytes())
 
-    # 4) captions (max 3 words per chunk)
+    # 4) captions (max 3 words per chunk, karaoke: spoken word turns yellow)
     chunks = []
     for wl, st in zip(words, starts):
         buf = []
         for (a, b, tx) in wl:
             buf.append((a + st, b + st, tx))
             if len(buf) == 3 or tx.endswith((".", ",", "?", "!", ":", ";")):
-                chunks.append((buf[0][0], buf[-1][1], " ".join(x[2] for x in buf)))
+                chunks.append((buf[0][0], buf[-1][1], list(buf)))
                 buf = []
         if buf:
-            chunks.append((buf[0][0], buf[-1][1], " ".join(x[2] for x in buf)))
+            chunks.append((buf[0][0], buf[-1][1], list(buf)))
     cap_cache = {}
 
     # 5) static overlays
@@ -510,13 +540,19 @@ def render(job, workdir, out_ig, out_yt, offline=False, fast=False):
             if cov2:
                 blend(frame, cov2, (W - cov2.width) // 2, y0 + cov1.height - 80 + gap_y, ca)
         # captions
-        for (a, b, txt) in chunks:
+        for ck, (a, b, wlist) in enumerate(chunks):
             if a - 0.04 <= t <= b + 0.12:
-                if txt not in cap_cache:
-                    cap_cache[txt] = fit_text(tr_upper(txt), W - 90, 66, fill=(255, 255, 255, 255), stroke=6)
-                ci = cap_cache[txt]
+                act = 0
+                for k, (wa, _wb, _w) in enumerate(wlist):
+                    if wa <= t + 0.02:
+                        act = k
+                key = (ck, act)
+                if key not in cap_cache:
+                    cap_cache[key] = karaoke_img([tr_upper(w[2]) for w in wlist], act, W - 80)
+                ci = cap_cache[key]
                 ca = min(1.0, (t - a + 0.04) / 0.08)
-                blend(frame, ci, (W - ci.width) // 2, int(H * 0.73), ca)
+                # centred, just below the cover title and above the Shorts UI (title/channel name)
+                blend(frame, ci, (W - ci.width) // 2, int(H * 0.585) - ci.height // 2, ca)
                 break
         ff.stdin.write(np.clip(frame, 0, 255).astype(np.uint8).tobytes())
         if f % 120 == 0:

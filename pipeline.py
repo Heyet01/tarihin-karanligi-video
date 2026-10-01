@@ -33,6 +33,10 @@ def get_job():
             with urllib.request.urlopen(req, timeout=280) as r:
                 job = clean_json(r.read().decode("utf-8"))
             if isinstance(job.get("scenes"), list) and len(job["scenes"]) >= 3:
+                n_words = sum(len(str(s.get("text", "")).split()) for s in job["scenes"])
+                if n_words > 40 and attempt == 0:   # target is 18-20 s (~26-31 words): ask once more
+                    log(f"script too long ({n_words} words), asking again")
+                    continue
                 return job
             last = f"bad job: {str(job)[:300]}"
         except Exception as e:  # noqa: BLE001

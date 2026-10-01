@@ -612,7 +612,7 @@ def render(job, workdir, out_ig, out_yt, offline=False, fast=False):
     raw = workdir / "video.mp4"
     ff = subprocess.Popen(
         ["ffmpeg", "-y", "-loglevel", "error", "-f", "rawvideo", "-pix_fmt", "rgb24", "-s", f"{W}x{H}",
-         "-r", str(FPS), "-i", "-", "-vf", "tmix=frames=2:weights='1 1'",
+         "-r", str(FPS), "-i", "-",   # no frame blending: it ghosted the karaoke captions
          "-c:v", "libx264", "-preset", "veryfast" if fast else "medium", "-crf", "14",
          "-pix_fmt", "yuv420p", str(raw)], stdin=subprocess.PIPE)
     cams = [str(sc.get("camera", "")).upper() for sc in scenes]

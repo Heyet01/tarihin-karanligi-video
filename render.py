@@ -52,6 +52,16 @@ COLOR_MODES = {
             "visualization elements",
 }
 CAMERAS = ["PUSH", "ORBIT", "RISE", "DRIFT"]
+# second shot per scene (shown in the second half) so every video has ~10 distinct images
+ALT_SHOTS = [
+    "extreme close-up macro detail of the single most important object in this scene",
+    "wide establishing aerial shot of the whole location seen from far above",
+    "dramatic low-angle view looking up at the scene",
+    "over-the-shoulder view from behind a translucent frosted glass silhouette observing the scene",
+    "detail of weathered hands-free still life: documents, tools and artifacts from this moment on a table",
+]
+# per-video visual "looks" so uploads do not all share one template
+LOOKS = ["arsiv", "sinema", "belge"]
 
 
 def tr_upper(s):
@@ -63,9 +73,11 @@ def log(*a):
 
 
 # ----------------------------------------------------------------- images
-def build_prompt(scene):
+def build_prompt(scene, alt=None):
     mode = str(scene.get("color_mode", "WARM")).upper()
     desc = str(scene.get("scene", "")).strip().replace('"', "'")[:420]
+    if alt:
+        desc = f"{alt}: {desc}"
     return f"{desc}, {COLOR_MODES.get(mode, COLOR_MODES['WARM'])}, {STYLE}"
 
 
@@ -190,7 +202,7 @@ def fetch_all_images(prompts, paths, seed, budget=900):
         log(f"image {i + 1}/{len(prompts)}: {'ok' if ok else 'FALLBACK'}")
         return ok
 
-    with ThreadPoolExecutor(max_workers=4) as ex:
+    with ThreadPoolExecutor(max_workers=int(os.environ.get("IMAGE_WORKERS", "5"))) as ex:
         return list(ex.map(one, range(len(prompts))))
 
 
@@ -273,12 +285,18 @@ def synth_voice(text, workdir, idx, offline):
     raise RuntimeError("TTS failed")
 
 
-def drone(n, seed):
+DRONE_ROOTS = [55.0, 49.0, 61.74, 46.25, 51.91, 58.27]
+DRONE_CHORDS = [(1.0, 1.498, 2.005, 2.997), (1.0, 1.189, 1.498, 2.0), (1.0, 1.335, 2.0, 2.67), (1.0, 1.498, 1.782, 2.0)]
+
+
+def drone(n, seed, pulse=False):
     rng = np.random.default_rng(seed)
     t = np.arange(n) / SR
-    lfo = 0.6 + 0.4 * np.sin(2 * np.pi * 0.06 * t + rng.uniform(0, 6))
-    s = (0.55 * np.sin(2 * np.pi * 55 * t) + 0.35 * np.sin(2 * np.pi * 82.41 * t + 1.3)
-         + 0.25 * np.sin(2 * np.pi * 110.3 * t + 0.4) + 0.12 * np.sin(2 * np.pi * 164.8 * t))
+    lfo = 0.6 + 0.4 * np.sin(2 * np.pi * (0.04 + 0.04 * rng.random()) * t + rng.uniform(0, 6))
+    root = DRONE_ROOTS[int(rng.integers(len(DRONE_ROOTS)))]
+    ch = DRONE_CHORDS[int(rng.integers(len(DRONE_CHORDS)))]
+    s = (0.55 * np.sin(2 * np.pi * root * ch[0] * t) + 0.35 * np.sin(2 * np.pi * root * ch[1] * t + 1.3)
+         + 0.25 * np.sin(2 * np.pi * root * ch[2] * t + 0.4) + 0.12 * np.sin(2 * np.pi * root * ch[3] * t))
     noise = np.cumsum(rng.standard_normal(n)).astype(np.float64)
     cs = np.concatenate([[0.0], np.cumsum(noise)])
     k = 4801
@@ -295,6 +313,16 @@ def drone(n, seed):
     boom = np.sin(2 * np.pi * (58 * bt - 9 * bt ** 2)) * np.exp(-bt * 2.6) * 0.32
     boom[: int(SR * 0.01)] *= np.linspace(0, 1, int(SR * 0.01))
     out[: len(boom)] += boom
+    if pulse:   # slow low heartbeat under the narration
+        bpm = 62 + int(rng.integers(0, 14))
+        beat = int(SR * 60 / bpm)
+        k = np.arange(int(SR * 0.22)) / SR
+        thump = (np.sin(2 * np.pi * 48 * k) * np.exp(-k * 22)).astype(np.float32) * 0.09
+        for b0 in range(int(SR * 1.6), n - len(thump), beat):
+            out[b0:b0 + len(thump)] += thump
+            b1 = b0 + int(SR * 0.24)
+            if b1 + len(thump) < n:
+                out[b1:b1 + len(thump)] += thump * 0.6
     return out.astype(np.float32)
 
 
@@ -359,6 +387,69 @@ def make_stamp():
     a[..., 3] *= wear * blotch * 0.8
     im = Image.fromarray(a.astype(np.uint8)).rotate(-13, expand=True, resample=Image.BICUBIC)
     return im
+
+
+def make_archive_tag(seed):
+    """Typewriter style archive label used by the 'belge' look instead of the GIZLI stamp."""
+    font = ImageFont.truetype(FONT, 30)
+    red = (186, 30, 30, 255)
+    txt = f"ARŞİV NO {1000 + seed % 9000} / {chr(65 + seed % 26)}"
+    l, t, r, b = font.getbbox(txt)
+    im = Image.new("RGBA", (r - l + 36, b - t + 26), (0, 0, 0, 0))
+    d = ImageDraw.Draw(im)
+    d.rectangle((2, 2, im.width - 3, im.height - 3), outline=red, width=3)
+    d.text((18 - l, 13 - t), txt, font=font, fill=red)
+    return im.rotate(4, expand=True, resample=Image.BICUBIC)
+
+
+def make_badge(label, look):
+    font = ImageFont.truetype(FONT, 34)
+    l, t, r, b = font.getbbox(label)
+    fill = {"sinema": (214, 168, 64, 255), "belge": (150, 24, 24, 235)}.get(look, (178, 22, 28, 235))
+    im = Image.new("RGBA", (r - l + 40, b - t + 22), (0, 0, 0, 0))
+    d = ImageDraw.Draw(im)
+    d.rounded_rectangle((0, 0, im.width - 1, im.height - 1), radius=8, fill=fill)
+    d.text((20 - l, 11 - t), label, font=font, fill=(255, 255, 255, 255) if look != "sinema" else (20, 14, 6, 255))
+    return im
+
+
+def make_info_card(place, era, look):
+    """Lower-third style card: where + when, shown at the start of scene 2."""
+    lines = [x for x in (tr_upper(place or ""), tr_upper(era or "")) if x.strip()]
+    if not lines:
+        return None
+    f1 = ImageFont.truetype(FONT, 44)
+    f2 = ImageFont.truetype(FONT, 32)
+    fonts = [f1, f2][:len(lines)]
+    widths = [f.getlength(x) for f, x in zip(fonts, lines)]
+    w = int(min(W - 60, max(widths) + 70))
+    h = 30 + sum(f.getmetrics()[0] + f.getmetrics()[1] + 6 for f in fonts) + 16
+    im = Image.new("RGBA", (w, h), (0, 0, 0, 0))
+    d = ImageDraw.Draw(im)
+    bg = {"belge": (236, 222, 190, 225), "sinema": (8, 8, 10, 200)}.get(look, (10, 8, 6, 190))
+    fg = (40, 24, 12, 255) if look == "belge" else (255, 255, 255, 255)
+    acc = {"sinema": (214, 168, 64, 255)}.get(look, (196, 28, 32, 255))
+    d.rounded_rectangle((0, 0, w - 1, h - 1), radius=10, fill=bg)
+    d.rectangle((0, 0, 9, h - 1), fill=acc)
+    y = 16
+    for k, (f, x) in enumerate(zip(fonts, lines)):
+        d.text((30, y), x, font=f, fill=fg if k == 0 else (acc if look != "belge" else (120, 30, 20, 255)))
+        a, b2 = f.getmetrics()
+        y += a + b2 + 6
+    return im
+
+
+def make_letterbox(look):
+    if look != "sinema":
+        return None
+    bar = 118
+    m = np.ones((H, W), np.float32)
+    m[:bar] = 0.0
+    m[-bar:] = 0.0
+    edge = np.linspace(0, 1, 14, dtype=np.float32)
+    m[bar:bar + 14] = edge[:, None]
+    m[H - bar - 14:H - bar] = edge[::-1, None]
+    return m
 
 
 def text_img(text, size, fill, stroke=6, glow=None):
@@ -519,10 +610,17 @@ def render(job, workdir, out_ig, out_yt, offline=False, fast=False):
              for i, sc in enumerate(scenes)]
     need = [i for i, sc in enumerate(scenes) if not sc.get("image_path")]
     got = {i: True for i in range(len(scenes)) if i not in need}
+    alt_paths = [Path(sc["image2_path"]) if sc.get("image2_path") else workdir / f"alt{i}.jpg"
+                 for i, sc in enumerate(scenes)]
+    alt_got = {i: True for i, sc in enumerate(scenes) if sc.get("image2_path")}
+    alt_need = [i for i in need if os.environ.get("ALT_IMAGES", "1") == "1"]
     if need and not offline:
-        res = fetch_all_images([build_prompt(scenes[i]) for i in need], [paths[i] for i in need],
+        prompts = [build_prompt(scenes[i]) for i in need] + \
+                  [build_prompt(scenes[i], ALT_SHOTS[(i + seed) % len(ALT_SHOTS)]) for i in alt_need]
+        res = fetch_all_images(prompts, [paths[i] for i in need] + [alt_paths[i] for i in alt_need],
                                seed + need[0], budget=int(os.environ.get("IMAGE_BUDGET", "900")))
-        got.update(dict(zip(need, res)))
+        got.update(dict(zip(need, res[:len(need)])))
+        alt_got.update(dict(zip(alt_need, res[len(need):])))
     for i, sc in enumerate(scenes):
         p, ok = paths[i], got.get(i, False)
         mode = str(sc.get("color_mode", "WARM")).upper()
@@ -537,6 +635,20 @@ def render(job, workdir, out_ig, out_yt, offline=False, fast=False):
         else:
             im = fallback_image(seed)
         imgs.append(grade(im, mode))
+    alts = []
+    for i, sc in enumerate(scenes):
+        a_im = None
+        if alt_got.get(i):
+            try:
+                a_im = grade(cover_resize(Image.open(alt_paths[i]).convert("RGB"), SW, SH),
+                             str(sc.get("color_mode", "WARM")).upper())
+            except Exception as e:  # noqa: BLE001
+                log(f"  alt image {i + 1} unreadable: {e}")
+        alts.append(a_im)
+    look = os.environ.get("LOOK") or str(job.get("look") or LOOKS[seed % len(LOOKS)])
+    if look not in LOOKS:
+        look = LOOKS[0]
+    log(f"look: {look}, alt images: {sum(a is not None for a in alts)}/{len(scenes)}")
 
     # 2) voice
     voices, words = [], []
@@ -575,7 +687,7 @@ def render(job, workdir, out_ig, out_yt, offline=False, fast=False):
                 i0 = max(0, int((tt - 0.28) * SR))
                 seg = w_[: max(0, min(len(w_), n - i0))]
                 sfx[i0:i0 + len(seg)] += seg
-    mix = voice_track + drone(n, seed) + sfx
+    mix = voice_track + drone(n, seed, pulse=(look == "sinema")) + sfx
     mix = np.tanh(mix * 1.1) / np.tanh(1.1)
     wav_path = workdir / "mix.wav"
     with wave.open(str(wav_path), "wb") as w:
@@ -601,11 +713,31 @@ def render(job, workdir, out_ig, out_yt, offline=False, fast=False):
     parch = make_parchment(seed)
     vig_d = make_vignette()
     vig0 = np.clip(1.05 - 0.55 * np.power(vig_d, 1.8), 0.0, 1.0)
-    stamp = make_stamp()
+    stamp = make_stamp() if look == "arsiv" else (make_archive_tag(seed) if look == "belge" else None)
+    if look == "sinema":
+        parch = np.ones_like(parch)
+    elif look == "belge":
+        parch = parch * np.array([1.03, 0.97, 0.86], np.float32)
+    letterbox = make_letterbox(look)
+    title_txt = str(job.get("title") or "")
+    part = "BÖLÜM 1" if "1. Bölüm" in title_txt else ("BÖLÜM 2" if "2. Bölüm" in title_txt else "")
+    badge = make_badge(part, look) if part else None
+    info = make_info_card(job.get("place"), job.get("era"), look)
+    info_t0 = starts[1] if len(starts) > 1 else 2.6
     words2 = (job.get("cover_text") or "").split()
     w1, w2 = (words2[0], " ".join(words2[1:])) if len(words2) >= 2 else ((words2 or [""])[0], "")
     cov1 = fit_text(tr_upper(w1), W - 70, 168, fill=(255, 255, 255, 255), stroke=5)
-    cov2 = fit_text(tr_upper(w2), W - 70, 168, fill=(224, 32, 27, 255), stroke=5, glow=(224, 32, 27, 200)) if w2 else None
+    if look == "sinema":
+        cov2 = fit_text(tr_upper(w2), W - 70, 168, fill=(232, 182, 72, 255), stroke=5, glow=(232, 160, 40, 170)) if w2 else None
+    elif look == "belge" and w2:
+        c2 = fit_text(tr_upper(w2), W - 110, 150, fill=(255, 255, 255, 255), stroke=0)
+        box = Image.new("RGBA", (c2.width - 30, c2.height - 40), (0, 0, 0, 0))
+        ImageDraw.Draw(box).rectangle((0, 0, box.width - 1, box.height - 1), fill=(176, 24, 26, 245))
+        cov2 = Image.new("RGBA", c2.size, (0, 0, 0, 0))
+        cov2.alpha_composite(box, (15, 20))
+        cov2.alpha_composite(c2)
+    else:
+        cov2 = fit_text(tr_upper(w2), W - 70, 168, fill=(224, 32, 27, 255), stroke=5, glow=(224, 32, 27, 200)) if w2 else None
     lx, ly = np.mgrid[0:H * 2, 0:W * 2].astype(np.float32)
 
     # 6) frames -> ffmpeg
@@ -635,12 +767,18 @@ def render(job, workdir, out_ig, out_yt, offline=False, fast=False):
         si = max(k for k in range(len(starts)) if starts[k] <= t + 1e-6)
         lt, d = t - starts[si], durs[si]
         u = lt / d
-        s, tx, ty, rot = camera(cams[si], u, t, d, phases[si])
-        if u >= 0.5:   # mid-scene punch-in: a hard "new shot" roughly every 2 seconds
-            s *= 1.14
-            tx *= 0.6
-            ty = ty * 0.6 + (-40 if si % 2 else 40)
-        fr = imgs[si].transform((W, H), Image.AFFINE, affine(s, tx, ty, rot), resample=Image.BICUBIC)
+        src = imgs[si]
+        if u >= 0.5 and alts[si] is not None:   # second shot of the same scene
+            cam2 = CAMERAS[(CAMERAS.index(cams[si]) + 2) % len(CAMERAS)]
+            s, tx, ty, rot = camera(cam2, (u - 0.5) * 2, t, d / 2, phases[si])
+            src = alts[si]
+        else:
+            s, tx, ty, rot = camera(cams[si], u, t, d, phases[si])
+            if u >= 0.5:   # no second image: mid-scene punch-in as a hard "new shot"
+                s *= 1.14
+                tx *= 0.6
+                ty = ty * 0.6 + (-40 if si % 2 else 40)
+        fr = src.transform((W, H), Image.AFFINE, affine(s, tx, ty, rot), resample=Image.BICUBIC)
         frame = np.asarray(fr).astype(np.float32)
         # sliding shadows
         sh = int(W * 0.5 + 70 * (u - 0.5) * (1 if si % 2 else -1))
@@ -659,8 +797,28 @@ def render(job, workdir, out_ig, out_yt, offline=False, fast=False):
             g = np.random.standard_normal((H // 2, W // 2)).astype(np.float32)
             g = g.repeat(2, 0).repeat(2, 1)[..., None] * 6.0
         frame += g
-        # stamp
-        blend(frame, stamp, W - stamp.width + 95, 118, 0.82)
+        if letterbox is not None:
+            frame *= letterbox[..., None]
+        # stamp / archive tag
+        if stamp is not None:
+            if look == "belge":
+                blend(frame, stamp, W - stamp.width - 26, 132, 0.85)
+            else:
+                blend(frame, stamp, W - stamp.width + 95, 118, 0.82)
+        # series badge (part 1 / part 2)
+        if badge is not None:
+            blend(frame, badge, 28, 132 if letterbox is None else 36, 0.95)
+        # where + when card at the start of scene 2
+        if info is not None and info_t0 <= t < info_t0 + 2.8:
+            ia = min(1.0, (t - info_t0) / 0.25, (info_t0 + 2.8 - t) / 0.3)
+            blend(frame, info, 30 - int(40 * (1 - min(1.0, (t - info_t0) / 0.3))), int(H * 0.2), max(0.0, ia))
+        # progress line (helps retention): top edge for sinema/belge
+        if look != "arsiv":
+            py = 8 if letterbox is None else 104
+            pw = int(W * min(1.0, t / total))
+            col = np.array([214, 168, 64] if look == "sinema" else [176, 24, 26], np.float32)
+            frame[py:py + 6, :] *= 0.45
+            frame[py:py + 6, :pw] = col
         # cover (first 2.2 s)
         if t < 2.4 and cov1:
             ca = 1.0 if t < 1.9 else max(0.0, 1 - (t - 1.9) / 0.5)
@@ -721,7 +879,8 @@ def render(job, workdir, out_ig, out_yt, offline=False, fast=False):
     cover = Path(out_ig).with_name("cover.jpg")
     subprocess.run(["ffmpeg", "-y", "-loglevel", "error", "-ss", "0.9", "-i", str(out_ig), "-frames:v", "1",
                     "-q:v", "3", str(cover)], check=True)
-    return {"duration": round(total, 2), "cameras": cams, "images_ok": images_ok, "scenes": len(scenes),
+    return {"duration": round(total, 2), "cameras": cams, "images_ok": images_ok, "scenes": len(scenes), "look": look,
+            "alt_ok": sum(a is not None for a in alts),
             "ig_mb": round(os.path.getsize(out_ig) / 1e6, 2), "yt_mb": round(os.path.getsize(out_yt) / 1e6, 2)}
 
 

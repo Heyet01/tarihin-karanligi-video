@@ -34,7 +34,8 @@ def get_job():
                 job = clean_json(r.read().decode("utf-8"))
             if isinstance(job.get("scenes"), list) and len(job["scenes"]) >= 3:
                 n_words = sum(len(str(s.get("text", "")).split()) for s in job["scenes"])
-                if n_words > 40 and attempt == 0:   # target is 18-20 s (~26-31 words): ask once more
+                limit = 40 if len(job["scenes"]) <= 5 else 72   # 5 scenes ~18-20 s, longer test videos up to ~40 s
+                if n_words > limit and attempt == 0:   # too long: ask once more
                     log(f"script too long ({n_words} words), asking again")
                     continue
                 return job
@@ -66,7 +67,8 @@ def main():
         "action": "publish",
         "folder": folder,
         "title": str(job.get("title") or job.get("cover_text") or "Tarihin Karanlığı")[:95].replace("<", "").replace(">", ""),
-        "description": str(job.get("description", "")).replace("<", "").replace(">", "")[:4900],
+        "description": (str(job.get("description", "")).replace("<", "").replace(">", "")[:4700]
+                        + "\n\n🔔 Her gün 2 yeni tarih sırrı: abone ol, devamını kaçırma!"),
         "fact_check": job.get("fact_check", ""),
         "cover_text": job.get("cover_text", ""),
         "script": script,

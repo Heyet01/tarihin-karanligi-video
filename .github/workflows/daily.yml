@@ -55,6 +55,7 @@ jobs:
           MAKE_TOKEN: ${{ secrets.MAKE_TOKEN }}
           POLLINATIONS_TOKEN: ${{ secrets.POLLINATIONS_TOKEN }}
           HORDE_API_KEY: ${{ secrets.HORDE_API_KEY }}
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
           STYLE_V2: "1"
         run: python pipeline.py
 

@@ -1,0 +1,44 @@
+{
+ "ok": true,
+ "problems": [],
+ "job": {
+  "cover_text": "ÖLÜM SIRRI",
+  "title": "Padişahı Öldüren Yara Nedir? 🩺 (1. Bölüm)",
+  "place": "Edirne",
+  "era": "On altıncı yüzyıl",
+  "description": "Yavuz Sultan Selim'in şüpheli ölümü tarihin en büyük sırlarından biri. Sence bu ölüm bir hastalık mı yoksa başka bir şey mi? 👇\n\n#tarih #osmanlı #yavuzsultanselim #shorts #tarihinkaranligi",
+  "fact_check": "I. Selim'in 1520 yılındaki ölümü şirpençe olarak kayıtlara geçmiştir, tartışma detayları kaynaklarda yer alır.",
+  "scenes": [
+   {
+    "text": "Dünyayı sarsan padişah nasıl öldü?",
+    "scene": "Cinematic wide shot of an empty Ottoman imperial tent at night, dramatic shadows, frosted glass silhouette, dark moody lighting, 4k",
+    "color_mode": "COLD",
+    "camera": "PUSH"
+   },
+   {
+    "text": "On altıncı yüzyılda Yavuz Sultan Selim hastalandı.",
+    "scene": "Close up of an aged leather manuscript with Ottoman calligraphy, dim candle light flickering, warm vintage atmosphere",
+    "color_mode": "WARM",
+    "camera": "ORBIT"
+   },
+   {
+    "text": "Sırtında çıkan şirpençe adında bir yara vardı.",
+    "scene": "Macro shot of a dark medicinal jar and dried herbs on a wooden table, mysterious shadows, dramatic side light",
+    "color_mode": "COLD",
+    "camera": "RISE"
+   },
+   {
+    "text": "Hekimler bu yarayı bir türlü iyileştiremedi.",
+    "scene": "Medium shot of an ancient stone palace corridor, blurred frosted glass figures walking away, cold blue tones",
+    "color_mode": "COLD",
+    "camera": "DRIFT"
+   },
+   {
+    "text": "Devamı akşam! Kaçırmamak için takip et.",
+    "scene": "Close up of an antique hourglass on a dark textured surface, sand falling slowly, dramatic rim light",
+    "color_mode": "WARM",
+    "camera": "PUSH"
+   }
+  ]
+ }
+}

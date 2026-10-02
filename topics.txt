@@ -1,0 +1,118 @@
+# Tarihin Karanlığı konu havuzu. Her satır: Kategori | Konu
+# Yeni konu eklemek için aynı biçimde satır ekle. (rivayet)/(efsane) işaretlerini koru.
+
+Osmanlı | IV. Murad'ın tütün, kahve ve içki yasakları ve tebdil-i kıyafet gezileri
+Osmanlı | Lale Devri eğlenceleri ve 1730 Patrona Halil İsyanı
+Osmanlı | Hezarfen Ahmed Çelebi'nin Galata Kulesi'nden uçuşu (rivayet, Evliya Çelebi)
+Osmanlı | Lagari Hasan Çelebi'nin roketle uçuşu (rivayet, Evliya Çelebi)
+Osmanlı | Takiyüddin'in İstanbul Rasathanesi'nin 1580'de yıkılması
+Osmanlı | Fatih Kanunnamesi'ndeki kardeş katli maddesi
+Osmanlı | Şehzadelerin kafes usulüyle sarayda kapatılması
+Osmanlı | Kösem Sultan'ın 1651'de sarayda boğdurulması
+Osmanlı | Genç Osman'ın 1622'de yeniçeriler tarafından öldürülmesi
+Osmanlı | 1826 Vaka-i Hayriye ve Yeniçeri Ocağı'nın kaldırılması
+Osmanlı | Kanuni'nin 1566 Zigetvar'da ölümünün günlerce gizlenmesi
+Osmanlı | Sokullu Mehmed Paşa'nın 1579'da divanda bıçaklanması
+Osmanlı | 1453'te gemilerin karadan Haliç'e yürütülmesi
+Osmanlı | Macar Urban'ın dev Şahi topu
+Osmanlı | Mimar Sinan'ın Süleymaniye'deki is odası
+Osmanlı | 1509 Kıyamet-i Suğra İstanbul depremi
+Osmanlı | İbrahim Müteferrika ve 1727'de ilk Türk matbaası
+Osmanlı | Cem Sultan'ın Avrupa'da esir tutulması
+Osmanlı | 1582 Surname-i Hümayun şenlikleri
+Osmanlı | Sarayda işaret diliyle konuşan dilsizler
+Osmanlı | Sadrazamın bostancıbaşı ile Topkapı'da ölüm koşusu geleneği (rivayet)
+Osmanlı | Cellat Çeşmesi
+Osmanlı | Ertuğrul Fırkateyni'nin 1890'da Japonya'da batışı
+Osmanlı | Osmanlı'nın 16. yüzyılda Ace'ye (Sumatra) donanma göndermesi
+Osmanlı | 1529 Viyana kuşatması
+Osmanlı | 1538 Preveze
+Osmanlı | Barbaros Hayreddin'in hayatı
+Osmanlı | Matrakçı Nasuh'un minyatür şehir haritaları
+Osmanlı | Evliya Çelebi Seyahatnamesi'nin tuhaf anlatıları
+Osmanlı | Hicaz Demiryolu
+Osmanlı | Yavuz Sultan Selim'in ölümü ve şirpençe tartışması
+Osmanlı | Kabakçı Mustafa İsyanı ve III. Selim
+Osmanlı | II. Abdülhamid'in fotoğraf albümleri
+Osmanlı | Yerebatan Sarnıcı'ndaki ters Medusa başları
+Osmanlı | Topkapı'daki Kutsal Emanetler
+Osmanlı | Tulumbacılar
+Osmanlı | Enderun Mektebi
+Osmanlı | Mehter'in Avrupa müziğine etkisi (Mozart'ın Alla Turca'sı)
+Osmanlı | Lale'nin Osmanlı'dan Hollanda'ya gidişi ve lale çılgınlığı
+Anadolu antik | Göbeklitepe
+Anadolu antik | Karahantepe
+Anadolu antik | Çatalhöyük
+Anadolu antik | Kaymaklı yeraltı şehri
+Anadolu antik | Nemrut Dağı ve bulunamayan Antiokhos mezarı
+Anadolu antik | Truva ve Schliemann'ın Priamos hazinesini kaçırması
+Anadolu antik | Efes Artemis Tapınağı'nı Herostratos'un yakması
+Anadolu antik | Halikarnas Mozolesi
+Anadolu antik | Hattuşa ve Kadeş Antlaşması
+Anadolu antik | Lídya'da dünyanın ilk sikkesi ve Kroisos
+Anadolu antik | Gordion'da Midas mezarı
+Anadolu antik | Zeugma ve Çingene Kız mozaiği
+Anadolu antik | Hierapolis'teki Plüton Kapısı (cehennem kapısı)
+Anadolu antik | Kekova batık şehri
+Anadolu antik | Uluburun batığı
+Anadolu antik | Demre'de Aziz Nikolaos
+Anadolu antik | Karun Hazinesi ve 2006'da çalınan kanatlı denizatı broşu
+Anadolu antik | Ani harabeleri
+Anadolu antik | Sagalassos
+Anadolu antik | Afrodisias
+Selçuklu ve erken Türk | 1071 Malazgirt ve esir düşen Romen Diyojen
+Selçuklu ve erken Türk | 1040 Dandanakan
+Selçuklu ve erken Türk | 1243 Kösedağ
+Selçuklu ve erken Türk | Alaeddin Keykubad'ın 1237'de zehirlenmesi
+Selçuklu ve erken Türk | Divriği Ulu Camii'nin gölge figürleri
+Selçuklu ve erken Türk | Ahlat Selçuklu Mezarlığı
+Selçuklu ve erken Türk | Orhun Yazıtları
+Selçuklu ve erken Türk | Kaşgarlı Mahmud'un dünya haritası
+Selçuklu ve erken Türk | Şems-i Tebrizi'nin kaybolması (rivayet)
+Selçuklu ve erken Türk | 1402 Ankara Savaşı ve Yıldırım Bayezid'in esareti
+Selçuklu ve erken Türk | Şeyh Bedreddin İsyanı
+Selçuklu ve erken Türk | Hasankeyf
+Selçuklu ve erken Türk | Selçuklu kervansarayları
+Selçuklu ve erken Türk | Babur ve Tac Mahal'in Türk-Moğol kökleri
+İlk Türk devletleri ve Orta Asya | Mete Han'ın ıslıklı okları ve babasına karşı sadakat sınavı (Çin kaynakları)
+İlk Türk devletleri ve Orta Asya | Mete Han ve Asya Hun İmparatorluğu'nun Çin'i vergiye bağlaması
+İlk Türk devletleri ve Orta Asya | Avrupa Hunları ve Attila'nın Roma'yı titretmesi
+İlk Türk devletleri ve Orta Asya | Attila'nın 453'te düğün gecesi ölümü
+İlk Türk devletleri ve Orta Asya | Attila'nın kayıp mezarı (rivayet)
+İlk Türk devletleri ve Orta Asya | Bumin Kağan ve 552'de Göktürk Kağanlığı'nın kuruluşu
+İlk Türk devletleri ve Orta Asya | Bilge Kağan ve Kül Tigin yazıtlarındaki 'Ey Türk milleti' seslenişi
+İlk Türk devletleri ve Orta Asya | Bilge Tonyukuk'un yazıtı ve öğütleri
+İlk Türk devletleri ve Orta Asya | İstemi Yabgu'nun Bizans'la ittifakı
+İlk Türk devletleri ve Orta Asya | Uygurların Maniheizm'i devlet dini yapması
+İlk Türk devletleri ve Orta Asya | Uygurların matbaa ve kâğıt kültürü
+İlk Türk devletleri ve Orta Asya | Satuk Buğra Han ve Karahanlıların İslam'ı kabulü
+İlk Türk devletleri ve Orta Asya | Yusuf Has Hacib'in Kutadgu Bilig'i
+İlk Türk devletleri ve Orta Asya | Hazar Kağanlığı'nın Yahudiliği kabul etmesi
+İlk Türk devletleri ve Orta Asya | İbn Fadlan'ın 922'de İtil Bulgarlarına yolculuğu
+İlk Türk devletleri ve Orta Asya | 751 Talas Savaşı ve kâğıdın batıya geçişi
+İlk Türk devletleri ve Orta Asya | Gazneli Mahmud'un Hindistan seferleri
+İlk Türk devletleri ve Orta Asya | Timur'un mezarının 1941'de açılması ve lanet efsanesi (rivayet)
+İlk Türk devletleri ve Orta Asya | Timur ile Yıldırım Bayezid rekabeti
+İlk Türk devletleri ve Orta Asya | Altın Orda
+İlk Türk devletleri ve Orta Asya | Kıpçak kökenli Memlük Sultanı Baybars
+İlk Türk devletleri ve Orta Asya | Pazırık kurganı ve dünyanın bilinen en eski halısı
+İlk Türk devletleri ve Orta Asya | Kuman taş babaları
+İlk Türk devletleri ve Orta Asya | Kürşad ihtilali (Çin kaynakları)
+Türk mitolojisi ve destanları | Ergenekon destanı ve demir dağın eritilmesi (efsane)
+Türk mitolojisi ve destanları | Bozkurt'un Türklere yol göstermesi (efsane)
+Türk mitolojisi ve destanları | Asena dişi kurt ve Göktürklerin türeyişi (efsane)
+Türk mitolojisi ve destanları | Oğuz Kağan destanı ve gökten inen ışık (efsane)
+Türk mitolojisi ve destanları | Uygur Türeyiş destanı (efsane)
+Türk mitolojisi ve destanları | Uygur Göç destanı ve kutlu kaya (efsane)
+Türk mitolojisi ve destanları | Gök Tengri inancı
+Türk mitolojisi ve destanları | Ülgen ve Erlik'in yaratılış efsanesi (efsane)
+Türk mitolojisi ve destanları | Umay Ana ve çocukların koruyucusu (efsane)
+Türk mitolojisi ve destanları | Dede Korkut'tan Tepegöz hikâyesi (efsane)
+Türk mitolojisi ve destanları | Dede Korkut'tan Deli Dumrul ve Azrail (efsane)
+Türk mitolojisi ve destanları | Alp Er Tunga'nın ölümü ve sagu ağıtı
+Türk mitolojisi ve destanları | Kamlar ve şaman davulu
+Türk mitolojisi ve destanları | Albastı inancı (efsane)
+Türk mitolojisi ve destanları | Yer-Su ruhları inancı (efsane)
+Türk mitolojisi ve destanları | Manas destanı (efsane)
+Türk mitolojisi ve destanları | Köroğlu destanı (efsane)
+Türk mitolojisi ve destanları | Nasreddin Hoca'nın gerçek hayatı ve Akşehir

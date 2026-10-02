@@ -5,6 +5,7 @@ import os
 import random
 import re
 import shutil
+import subprocess
 import sys
 import time
 import urllib.request
@@ -67,7 +68,8 @@ def plan(state, now):
             age_h = 99
         if age_h < 30:
             return {"category": ser.get("category", ""), "topic": ser["topic"], "part": 2,
-                    "prev_title": ser.get("title", ""), "prev_script": ser.get("script", "")}
+                    "prev_title": ser.get("title", ""), "prev_script": ser.get("script", ""),
+                    "look": ser.get("look"), "prev_folder": ser.get("folder"), "prev_cut": ser.get("cut")}
     pool = load_pool()
     used = set(state.get("used", []))
     fresh = [p for p in pool if p[1] not in used] or pool
@@ -178,7 +180,7 @@ def finalize(job, pl):
     return job
 
 
-def save_state(state, pl, job, script, site):
+def save_state(state, pl, job, script, site, folder="", info=None):
     now = tr_now()
     st = {k: state.get(k, []) for k in ("used", "recent_titles", "recent_categories")}
     if pl["part"] != 2 and pl["topic"]:
@@ -186,10 +188,46 @@ def save_state(state, pl, job, script, site):
         st["recent_categories"] = (st["recent_categories"] + [pl["category"]])[-6:]
     st["recent_titles"] = (st["recent_titles"] + [job["title"]])[-20:]
     st["last_category"] = pl["category"]
+    info = info or {}
     st["series"] = ({"part": 1, "topic": pl["topic"], "category": pl["category"], "title": job["title"],
-                     "script": script, "at": now.isoformat(timespec="minutes")} if pl["part"] == 1 else {})
+                     "script": script, "at": now.isoformat(timespec="minutes"), "folder": folder,
+                     "cut": info.get("last_start"), "look": info.get("look")} if pl["part"] == 1 else {})
     st["updated"] = now.isoformat(timespec="minutes")
     (site / "state.json").write_text(json.dumps(st, ensure_ascii=False, indent=1), encoding="utf-8")
+
+
+def make_full(pl, part2_mp4, out_mp4, work):
+    """Part 1 (without its 'Devamı akşam' line) + part 2 = one ~1 minute story for TikTok."""
+    if not pl.get("prev_folder"):
+        return False
+    work.mkdir(parents=True, exist_ok=True)
+    p1 = work / "part1.mp4"
+    try:
+        with urllib.request.urlopen(SITE_URL + pl["prev_folder"] + "/video_ig.mp4", timeout=120) as r:
+            p1.write_bytes(r.read())
+        cut = pl.get("prev_cut")
+        trim = f"trim=0:{cut}," if cut else ""
+        atrim = f"atrim=0:{cut},afade=t=out:st={max(0.0, float(cut) - 0.25)}:d=0.25," if cut else ""
+        flt = (f"[0:v]{trim}setpts=PTS-STARTPTS,fps=24,scale=720:1280,setsar=1[v0];"
+               f"[0:a]{atrim}asetpts=PTS-STARTPTS,aresample=48000[a0];"
+               "[1:v]setpts=PTS-STARTPTS,fps=24,scale=720:1280,setsar=1[v1];"
+               "[1:a]asetpts=PTS-STARTPTS,aresample=48000[a1];"
+               "[v0][a0][v1][a1]concat=n=2:v=1:a=1[v][a]")
+        subprocess.run(["ffmpeg", "-y", "-loglevel", "error", "-i", str(p1), "-i", str(part2_mp4),
+                        "-filter_complex", flt, "-map", "[v]", "-map", "[a]", "-c:v", "libx264", "-preset", "medium",
+                        "-crf", "23", "-maxrate", "3500k", "-bufsize", "7000k", "-pix_fmt", "yuv420p",
+                        "-c:a", "aac", "-b:a", "128k", "-ac", "2", "-movflags", "+faststart", str(out_mp4)],
+                       check=True, timeout=600)
+        log("full story video:", round(out_mp4.stat().st_size / 1e6, 2), "MB")
+        return True
+    except Exception as e:  # noqa: BLE001
+        log("full story video failed:", e)
+        return False
+
+
+def tiktok_caption(title, description):
+    desc = re.sub(r"\n*(?:⏪|⏰|🔔)[^\n]*", "", description).replace("#shorts", "#keşfet")
+    return f"{title}\n\n{desc.strip()}\n\n🔔 Takip et, her gün yeni bir tarih sırrı!"
 
 
 def main():
@@ -200,6 +238,8 @@ def main():
     site = OUT / "site"
     dest = site / folder
     dest.mkdir(parents=True, exist_ok=True)
+    if pl.get("look") and not job.get("look"):
+        job["look"] = pl["look"]
     info = render(job, OUT / "work", dest / "video_ig.mp4", dest / "video_yt.mp4")
     shutil.rmtree(OUT / "work", ignore_errors=True)
     log("render:", json.dumps(info))
@@ -235,7 +275,15 @@ def main():
     (dest / "meta.json").write_text(json.dumps(meta, ensure_ascii=False, indent=1), encoding="utf-8")
     (site / ".nojekyll").write_text("")
     if pl.get("topic") and not os.environ.get("JOB_FILE"):
-        save_state(state, pl, job, script, site)
+        save_state(state, pl, job, script, site, folder, info)
+    if pl.get("part") in (0, 2) and not os.environ.get("JOB_FILE"):
+        full = pl["part"] == 2 and make_full(pl, dest / "video_ig.mp4", dest / "video_full.mp4", OUT / "full_work")
+        shutil.rmtree(OUT / "full_work", ignore_errors=True)
+        tt_title = fix_title(pl.get("prev_title", ""), 0) if full else meta["title"]
+        tiktok = {"date": tr_now().strftime("%Y-%m-%d"), "part": pl["part"], "full": bool(full),
+                  "title": tt_title[:90], "caption": tiktok_caption(tt_title, meta["description"]),
+                  "video_url": base + ("video_full.mp4" if full else "video_ig.mp4"), "posted": False}
+        (OUT / "tiktok.json").write_text(json.dumps(tiktok, ensure_ascii=False, indent=1), encoding="utf-8")
     (site / "index.html").write_text(
         f'<!doctype html><meta charset="utf-8"><title>Tarihin Karanlığı</title>'
         f'<p>Son video: <a href="{folder}/video_ig.mp4">{folder}</a></p>', encoding="utf-8")

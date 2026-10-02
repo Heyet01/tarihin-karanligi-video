@@ -880,7 +880,7 @@ def render(job, workdir, out_ig, out_yt, offline=False, fast=False):
     subprocess.run(["ffmpeg", "-y", "-loglevel", "error", "-ss", "0.9", "-i", str(out_ig), "-frames:v", "1",
                     "-q:v", "3", str(cover)], check=True)
     return {"duration": round(total, 2), "cameras": cams, "images_ok": images_ok, "scenes": len(scenes), "look": look,
-            "alt_ok": sum(a is not None for a in alts),
+            "alt_ok": sum(a is not None for a in alts), "last_start": round(float(starts[-1]), 3),
             "ig_mb": round(os.path.getsize(out_ig) / 1e6, 2), "yt_mb": round(os.path.getsize(out_yt) / 1e6, 2)}
 
 

@@ -12,7 +12,11 @@
   "Hierapolis'teki Cehennem Kapısı Gerçek Çıktı! 🏛️",
   "Tarihin En Büyük Kaybı: Franklin Seferi (1. Bölüm) 🚢"
  ],
- "recent_categories": ["Anadolu antik", "Osmanlı", "Anadolu antik"],
+ "recent_categories": [
+  "Anadolu antik",
+  "Osmanlı",
+  "Anadolu antik"
+ ],
  "last_category": "Anadolu antik",
  "series": {
   "part": 1,
@@ -20,7 +24,10 @@
   "category": "Dünya tarihi",
   "title": "Tarihin En Büyük Kaybı: Franklin Seferi (1. Bölüm) 🚢",
   "script": "Buzların arasında bir ordu nasıl yok oldu? İki dev gemi yola çıktı. Mürettebat Kuzeybatı Geçidi ni arıyordu. Tüm mürettebat Kutup buzullarında ardında iz bırakmadan buharlaştı. Devamı akşam! Kaçırmamak için takip et.",
-  "at": "2026-10-02T12:37"
+  "at": "2026-10-02T12:37",
+  "folder": "2026-10-02-36990455658",
+  "cut": null,
+  "look": null
  },
  "updated": "2026-10-02T12:37"
 }

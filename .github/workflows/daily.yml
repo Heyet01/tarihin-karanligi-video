@@ -44,7 +44,8 @@ jobs:
           sudo apt-get install -y -qq ffmpeg
           pip install -q numpy pillow edge-tts fonttools
           mkdir -p assets
-          curl -sSL -o /tmp/Oswald.ttf "https://github.com/google/fonts/raw/main/ofl/oswald/Oswald%5Bwght%5D.ttf"
+          F="ofl/oswald/Oswald%5Bwght%5D.ttf"
+          curl -fsSL --retry 5 --retry-delay 6 -o /tmp/Oswald.ttf "https://github.com/google/fonts/raw/main/$F" || curl -fsSL --retry 5 --retry-delay 6 -o /tmp/Oswald.ttf "https://cdn.jsdelivr.net/gh/google/fonts@main/$F"
           fonttools varLib.instancer /tmp/Oswald.ttf wght=700 -q -o assets/Oswald-Bold.ttf
 
       - name: Senaryo al ve videoyu uret

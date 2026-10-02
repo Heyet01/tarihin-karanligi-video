@@ -1,0 +1,38 @@
+{
+ "1_simdiki_ahmet": {
+  "voice": "tr-TR-AhmetNeural",
+  "rate": "+14%",
+  "word_boundaries": 48,
+  "words": 48
+ },
+ "2_andrew": {
+  "voice": "en-US-AndrewMultilingualNeural",
+  "rate": "+8%",
+  "word_boundaries": 48,
+  "words": 48
+ },
+ "3_brian": {
+  "voice": "en-US-BrianMultilingualNeural",
+  "rate": "+8%",
+  "word_boundaries": 48,
+  "words": 48
+ },
+ "4_florian": {
+  "voice": "de-DE-FlorianMultilingualNeural",
+  "rate": "+8%",
+  "word_boundaries": 48,
+  "words": 48
+ },
+ "5_remy": {
+  "voice": "fr-FR-RemyMultilingualNeural",
+  "rate": "+8%",
+  "word_boundaries": 48,
+  "words": 48
+ },
+ "6_emel_kadin": {
+  "voice": "tr-TR-EmelNeural",
+  "rate": "+10%",
+  "word_boundaries": 48,
+  "words": 48
+ }
+}

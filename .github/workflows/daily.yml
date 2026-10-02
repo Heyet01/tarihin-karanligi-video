@@ -8,7 +8,7 @@ on:
   workflow_dispatch: {}
 
 permissions:
-  contents: read
+  contents: write
   pages: write
   id-token: write
 
@@ -84,6 +84,23 @@ jobs:
           echo "video url status: $code"
           jq --arg t "$MAKE_TOKEN" '. + {token: $t}' out/notify.json > /tmp/payload.json
           curl -sS -X POST "$MAKE_WEBHOOK_URL" -H "Content-Type: application/json" --data @/tmp/payload.json
+
+      - name: TikTok bilgisini kaydet
+        if: steps.guard.outputs.skip != 'true'
+        continue-on-error: true
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          [ -f out/tiktok.json ] || { echo "Bu video icin TikTok kaydi yok"; exit 0; }
+          API="https://api.github.com/repos/${{ github.repository }}"
+          AUTH="Authorization: Bearer $GH_TOKEN"
+          ACC="Accept: application/vnd.github+json"
+          curl -sf -H "$AUTH" -H "$ACC" "$API/git/ref/heads/state" > /dev/null || \
+            curl -sf -H "$AUTH" -H "$ACC" -X POST "$API/git/refs" -d "{\"ref\":\"refs/heads/state\",\"sha\":\"$GITHUB_SHA\"}" > /dev/null
+          SHA=$(curl -s -H "$AUTH" -H "$ACC" "$API/contents/tiktok.json?ref=state" | jq -r '.sha // empty')
+          jq -n --arg c "$(base64 -w0 out/tiktok.json)" --arg s "$SHA" \
+            '{message: "TikTok bilgisi", content: $c, branch: "state"} + (if $s != "" then {sha: $s} else {} end)' > /tmp/tt.json
+          curl -sf -H "$AUTH" -H "$ACC" -X PUT "$API/contents/tiktok.json" --data @/tmp/tt.json > /dev/null && echo "tiktok.json kaydedildi"
 
       - name: Hata bildirimi
         if: failure()

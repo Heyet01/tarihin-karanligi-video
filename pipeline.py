@@ -147,6 +147,53 @@ def problems(job, pl):
     return errs
 
 
+GEMINI_MODELS = ["gemini-flash-latest", "gemini-3.5-flash", "gemini-flash-latest", "gemini-flash-lite-latest"]
+
+
+def gemini_script(key, brief):
+    """Ask Gemini directly from GitHub (free API key) - saves Make operations; same prompts as the Make route."""
+    import prompts
+    now = tr_now()
+    usr = prompts.USR.replace("@DATE@", now.strftime("%d.%m.%Y")).replace("@TIME@", now.strftime("%H:%M")) \
+        .replace("@BRIEF@", brief)
+    last = None
+    for i, model in enumerate(GEMINI_MODELS):
+        body = json.dumps({"system_instruction": {"parts": [{"text": prompts.SYS}]},
+                           "contents": [{"role": "user", "parts": [{"text": usr}]}],
+                           "generationConfig": {"temperature": 0.5 if "lite" in model else 0.8,
+                                                "responseMimeType": "application/json"}}).encode()
+        try:
+            req = urllib.request.Request(
+                f"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent",
+                data=body, headers={"Content-Type": "application/json", "x-goog-api-key": key})
+            with urllib.request.urlopen(req, timeout=150) as r:
+                out = json.loads(r.read())
+            job = clean_json(out["candidates"][0]["content"]["parts"][0]["text"])
+            if isinstance(job, list) and job:
+                job = job[0]
+            if isinstance(job, dict) and job.get("scenes"):
+                log("script from Gemini API:", model)
+                return job
+            last = f"no scenes from {model}"
+        except Exception as e:  # noqa: BLE001
+            last = f"{model}: {str(e)[:200]}"
+        log("gemini direct failed:", last)
+        time.sleep(20 if i == 1 else 5)
+    raise RuntimeError(last)
+
+
+def request_script(url, body, brief):
+    key = os.environ.get("GEMINI_API_KEY", "").strip()
+    if key:
+        try:
+            return gemini_script(key, brief)
+        except Exception as e:  # noqa: BLE001
+            log("falling back to Make:", str(e)[:200])
+    req = urllib.request.Request(url, data=body, headers={"Content-Type": "application/json"})
+    with urllib.request.urlopen(req, timeout=280) as r:
+        return clean_json(r.read().decode("utf-8"))
+
+
 def get_job():
     if os.environ.get("JOB_FILE"):
         job = json.loads(Path(os.environ["JOB_FILE"]).read_text(encoding="utf-8"))
@@ -155,14 +202,13 @@ def get_job():
     state = load_state()
     pl = plan(state, tr_now())
     log("plan:", json.dumps(pl, ensure_ascii=False)[:300])
+    brief = brief_for(pl, state)
     body = json.dumps({"action": "script", "token": token, "topic": pl["topic"], "category": pl["category"],
-                       "part": str(pl["part"]), "brief": brief_for(pl, state)}).encode()
+                       "part": str(pl["part"]), "brief": brief}).encode()
     last, best = None, None
     for attempt in range(4):
         try:
-            req = urllib.request.Request(url, data=body, headers={"Content-Type": "application/json"})
-            with urllib.request.urlopen(req, timeout=280) as r:
-                job = clean_json(r.read().decode("utf-8"))
+            job = request_script(url, body, brief)
             if isinstance(job.get("scenes"), list) and len(job["scenes"]) >= 3:
                 n_words = sum(len(str(s.get("text", "")).split()) for s in job["scenes"])
                 limit = 40 if len(job["scenes"]) <= 5 else 72   # 5 scenes ~18-20 s, longer videos up to ~40 s

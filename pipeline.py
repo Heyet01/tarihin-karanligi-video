@@ -26,6 +26,17 @@ def clean_json(txt):
 SITE_URL = "https://heyet01.github.io/tarihin-karanligi-video/"
 FORBIDDEN = re.compile(r"\w*yıl(?:dır|\s+önce|\s+sonra)\b", re.IGNORECASE)
 CLIFF = "Devamı akşam! Kaçırmamak için takip et."
+MYSTERY = (
+    "GİZEM AÇISI (kanalın imza tarzı): Konuyu çözülmeyi bekleyen bir sır dosyası gibi anlat. "
+    "İlk cümle bir sırrı, çelişkiyi ya da cevabı merak edilen bir neden/nasıl sorusunu açsın "
+    "(örn. Bu şehri kim yerin altına kazdı? / Bir sultan neden kendi sarayından kaçtı?). "
+    "cover_text ve title gizem hissi versin (örn. KAYIP ŞEHİR, ... Sırrı, Kimse Açıklayamadı) ama içindeki iddia doğru olsun. "
+    "Konuda gerçekten çözülmemiş ya da tarihçilerin tartıştığı bir nokta varsa onu öne çıkar ve bunun kesin bilinmediğini söyle; "
+    "çözülmüş konularda sahte gizem uydurma, merakı neden ve nasıl sorusundan kur. "
+    "Gizemi ses tonuyla değil bilgiyle büyüt: her sahne yeni bir ipucu versin. "
+    "Gizem uğruna ABARTMA: sonucu ve rakamları büyütme; yok oldu, kimse bilmiyor, hiç çözülemedi gibi ifadeleri "
+    "yalnızca kaynaklara göre kesin doğruysa kullan. "
+    "Komplo teorisi, uzaylı, lanet, gizli hazine veya gizli tünel gibi kanıtsız iddialar kullanma.")
 
 
 def tr_now():
@@ -90,7 +101,8 @@ def plan(state, now):
 def brief_for(pl, state):
     recent = " | ".join(state.get("recent_titles", [])[-12:][::-1]) or "yok"
     lines = [f"BUGÜNÜN KONUSU (SADECE bunu anlat, başka konu seçme): {pl['topic']}  [{pl['category']}]",
-             f"Kanalın son video başlıkları (açılış ve başlık kalıplarını tekrarlama): {recent}"]
+             f"Kanalın son video başlıkları (açılış ve başlık kalıplarını tekrarlama): {recent}",
+             MYSTERY]
     if pl["part"] == 1:
         lines.append(
             "BÖLÜM KURALI: Bu 1. BÖLÜM (öğle videosu). TAM 5 sahne, toplam 26-31 kelime. "

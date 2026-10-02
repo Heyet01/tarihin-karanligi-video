@@ -29,7 +29,7 @@ FPS = 24
 SR = 48000
 ROOT = Path(__file__).resolve().parent
 FONT = str(ROOT / "assets" / "Oswald-Bold.ttf")
-VOICE = "tr-TR-AhmetNeural"
+VOICE = os.environ.get("TTS_VOICE") or "tr-TR-AhmetNeural"
 
 STYLE = (
     "ultra detailed cinematic 3D render, photorealistic hyper detailed environment with "

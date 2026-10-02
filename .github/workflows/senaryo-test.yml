@@ -1,0 +1,37 @@
+name: Senaryo testi
+
+on:
+  workflow_dispatch: {}
+
+permissions:
+  contents: write
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Test
+        env:
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+        run: |
+          pip install -q numpy pillow
+          python - <<'PY'
+          import json, os, pipeline as P
+          pl = {"category": "Osmanlı", "topic": "Yavuz Sultan Selim'in ölümü ve şirpençe tartışması", "part": 1}
+          brief = P.brief_for(pl, {"recent_titles": []})
+          try:
+              job = P.gemini_script(os.environ["GEMINI_API_KEY"], brief)
+              res = {"ok": True, "problems": P.problems(job, pl), "job": job}
+          except Exception as e:
+              res = {"ok": False, "error": str(e)[:500]}
+          json.dump(res, open("/tmp/senaryo_test.json", "w"), ensure_ascii=False, indent=1)
+          print(res.get("ok"), res.get("problems"))
+          PY
+          git config user.name "tarihin-karanligi-bot"
+          git config user.email "tarihin-karanligi-bot@users.noreply.github.com"
+          git fetch -q origin state
+          git checkout -q -B state origin/state
+          mkdir -p sample && cp /tmp/senaryo_test.json sample/senaryo_test.json
+          git add sample
+          git commit -q -m "Senaryo testi" && git push -q origin state

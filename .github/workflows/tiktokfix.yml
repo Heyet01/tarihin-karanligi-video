@@ -1,0 +1,41 @@
+name: TikTok videosunu duzelt
+
+on:
+  workflow_dispatch:
+    inputs:
+      p1_scenes:
+        description: "1. bolum sahne metinleri (JSON liste)"
+        required: true
+      p1_duration:
+        description: "1. bolum videosunun suresi (sn)"
+        required: true
+
+permissions:
+  contents: write
+
+jobs:
+  fix:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - name: Kurulum
+        run: |
+          command -v ffmpeg || (sudo apt-get update -qq && sudo apt-get install -y -qq ffmpeg)
+          pip install -q numpy pillow edge-tts
+      - name: Duzelt
+        env:
+          P1_SCENES: ${{ inputs.p1_scenes }}
+          P1_DURATION: ${{ inputs.p1_duration }}
+        run: |
+          git fetch -q origin state
+          git show origin/state:tiktok.json > tiktok_state.json
+          python tools/fix_tiktok.py
+      - name: State dalina kaydet
+        run: |
+          git config user.name "tarihin-karanligi-bot"
+          git config user.email "tarihin-karanligi-bot@users.noreply.github.com"
+          git checkout -q -B state origin/state
+          mkdir -p fix && cp out/tiktok_fix.mp4 out/fix_*.jpg fix/
+          git add fix
+          git commit -q -m "Duzeltilmis TikTok videosu" && git push -q origin state

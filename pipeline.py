@@ -93,20 +93,20 @@ def brief_for(pl, state):
              f"Kanalın son video başlıkları (açılış ve başlık kalıplarını tekrarlama): {recent}"]
     if pl["part"] == 1:
         lines.append(
-            "BÖLÜM KURALI: Bu 1. BÖLÜM (öğle videosu). TAM 5 sahne, toplam 26-31 kelime. "
+            "BÖLÜM KURALI: Bu 1. BÖLÜM (öğle videosu, yaklaşık 30 saniye). TAM 6 sahne, toplam 40-46 kelime. "
             "title sonu ' (1. Bölüm)' ve 1 emoji olsun, toplam en fazla 55 karakter. "
             "Hikayeyi en merak edilen anda kes; twist'i ve sonucu AÇIKLAMA. "
-            f"5. sahne tam olarak şu cümle olsun: {CLIFF}")
+            f"Son sahne (6. sahne) tam olarak şu cümle olsun: {CLIFF}")
     elif pl["part"] == 2:
         lines.append(
             "BÖLÜM KURALI: Bu 2. BÖLÜM (akşam videosu), öğlen yayınlanan 1. bölümün devamı. "
             f"1. bölümün başlığı: {pl.get('prev_title', '')}. 1. bölümün metni: {pl.get('prev_script', '')} "
-            "TAM 7 sahne, toplam 45-60 kelime. title aynı konuyu anlatsın, sonu ' (2. Bölüm)' ve 1 emoji olsun. "
+            "TAM 7 sahne, toplam 44-52 kelime (yaklaşık 30-35 saniye). title aynı konuyu anlatsın, sonu ' (2. Bölüm)' ve 1 emoji olsun. "
             "1. sahne öğlen kalan merakı hatırlatan kısa bir hook olsun (1. bölümün cümlelerini tekrarlama), "
             "sonra yeni detaylar, twist ve sonuç gelsin; son sahne A mı, B mi sorusu olsun.")
     else:
         lines.append(
-            "BÖLÜM KURALI: Bu tek parça video. TAM 7 sahne, toplam 45-60 kelime. title'da 'Bölüm' yazma. "
+            "BÖLÜM KURALI: Bu tek parça video (yaklaşık 30-35 saniye). TAM 7 sahne, toplam 44-52 kelime. title'da 'Bölüm' yazma. "
             "Son sahne A mı, B mi sorusu olsun.")
     return "\n\n".join(lines)
 
@@ -124,7 +124,7 @@ def fix_title(title, part):
 def problems(job, pl):
     errs = []
     scenes = job.get("scenes") or []
-    want = 5 if pl["part"] == 1 else 7
+    want = 6 if pl["part"] == 1 else 7
     if abs(len(scenes) - want) > 1:
         errs.append(f"{len(scenes)} sahne (beklenen {want})")
     text = " ".join(str(s.get("text", "")) for s in scenes) + " " + str(job.get("title", ""))
@@ -153,7 +153,7 @@ def get_job():
                 job = clean_json(r.read().decode("utf-8"))
             if isinstance(job.get("scenes"), list) and len(job["scenes"]) >= 3:
                 n_words = sum(len(str(s.get("text", "")).split()) for s in job["scenes"])
-                limit = 40 if len(job["scenes"]) <= 5 else 72   # 5 scenes ~18-20 s, longer videos up to ~40 s
+                limit = 50 if len(job["scenes"]) <= 6 else 58   # every video ~30-35 s (best for the Shorts feed)
                 errs = problems(job, pl)
                 if n_words > limit:
                     errs.append(f"{n_words} kelime")

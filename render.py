@@ -51,6 +51,25 @@ COLOR_MODES = {
             "visual elements, red glow from an off-screen source at the top corners, floating data "
             "visualization elements",
 }
+STYLE_V2 = (
+    "ultra detailed cinematic photorealistic scene, vivid rich saturated colors, bright dramatic key light "
+    "with strong glowing highlights, high contrast, one clear eye-catching subject in the centre, epic scale, "
+    "culture-specific objects, architecture and textures, volumetric god rays, all human figures are translucent "
+    "frosted glass humanoid silhouettes, faceless, featureless, anonymous, expressive body posture only, shallow "
+    "depth of field, sharp foreground, vertical cinematic composition, striking thumbnail-worthy frame, "
+    "faces never visible, no text, no letters"
+)
+COLOR_MODES_V2 = {
+    "WARM": "warm golden sunlight, fiery orange and amber accents, glowing lanterns and torches",
+    "COLD": "icy blue and teal moonlight with bright silver highlights and glowing cyan accents",
+    "INFO": "bold graphic composition on deep navy blue with bright gold and white accents",
+}
+
+
+def is_v2(job=None):
+    return os.environ.get("STYLE_V2") == "1" or (job or {}).get("style") == "v2"
+
+
 CAMERAS = ["PUSH", "ORBIT", "RISE", "DRIFT"]
 # second shot per scene (shown in the second half) so every video has ~10 distinct images
 ALT_SHOTS = [
@@ -73,11 +92,13 @@ def log(*a):
 
 
 # ----------------------------------------------------------------- images
-def build_prompt(scene, alt=None):
+def build_prompt(scene, alt=None, v2=False):
     mode = str(scene.get("color_mode", "WARM")).upper()
     desc = str(scene.get("scene", "")).strip().replace('"', "'")[:420]
     if alt:
         desc = f"{alt}: {desc}"
+    if v2:
+        return f"{desc}, {COLOR_MODES_V2.get(mode, COLOR_MODES_V2['WARM'])}, {STYLE_V2}"
     return f"{desc}, {COLOR_MODES.get(mode, COLOR_MODES['WARM'])}, {STYLE}"
 
 
@@ -215,9 +236,14 @@ def cover_resize(img, w, h):
     return img.crop((l, t, l + w, t + h))
 
 
-def grade(img, mode):
+def grade(img, mode, v2=False):
     a = np.asarray(img.convert("RGB")).astype(np.float32) / 255.0
     lum = (a @ np.array([0.299, 0.587, 0.114], np.float32))[..., None]
+    if v2:   # bright, punchy, saturated: stands out while scrolling
+        a = lum + (a - lum) * 1.18
+        a = np.clip((a - 0.5) * 1.12 + 0.5, 0, 1)
+        a = np.power(np.clip(a, 0, 1), 0.86)
+        return Image.fromarray((np.clip(a, 0, 1) * 255).astype(np.uint8))
     a = lum + (a - lum) * 0.82                      # gentle desaturation
     a = np.clip((a - 0.5) * 1.08 + 0.5, 0, 1)       # a touch of contrast
     if mode == "COLD":
@@ -275,7 +301,8 @@ def synth_voice(text, workdir, idx, offline):
         return np.zeros(int((t + 0.2) * SR), np.float32), words
     for attempt in range(4):
         try:
-            words = asyncio.run(_tts(text, str(mp3), os.environ.get("TTS_RATE", "+2%"), "-3Hz"))
+            words = asyncio.run(_tts(text, str(mp3), os.environ.get("TTS_RATE", "+2%"),
+                                     os.environ.get("TTS_PITCH", "-3Hz")))
             audio = decode_wav(str(mp3), str(wav))
             if len(audio) > SR * 0.5:
                 return audio, words
@@ -436,6 +463,16 @@ def make_info_card(place, era, look):
         d.text((30, y), x, font=f, fill=fg if k == 0 else (acc if look != "belge" else (120, 30, 20, 255)))
         a, b2 = f.getmetrics()
         y += a + b2 + 6
+    return im
+
+
+def make_cta(text):
+    font = ImageFont.truetype(FONT, 58)
+    l, t, r2, b = font.getbbox(text)
+    im = Image.new("RGBA", (r2 - l + 70, b - t + 40), (0, 0, 0, 0))
+    d = ImageDraw.Draw(im)
+    d.rounded_rectangle((0, 0, im.width - 1, im.height - 1), radius=(b - t + 40) // 2, fill=(214, 34, 34, 240))
+    d.text((35 - l, 20 - t), text, font=font, fill=(255, 255, 255, 255))
     return im
 
 
@@ -603,6 +640,10 @@ def render(job, workdir, out_ig, out_yt, offline=False, fast=False):
     scenes = job["scenes"]
     seed = int(job.get("seed", random.randint(1, 10 ** 6)))
     rng = random.Random(seed)
+    V2 = is_v2(job)
+    if V2:   # faster, livelier narration
+        os.environ.setdefault("TTS_RATE", "+14%")
+        os.environ.setdefault("TTS_PITCH", "+0Hz")
 
     # 1) images
     imgs, images_ok = [], 0
@@ -615,8 +656,8 @@ def render(job, workdir, out_ig, out_yt, offline=False, fast=False):
     alt_got = {i: True for i, sc in enumerate(scenes) if sc.get("image2_path")}
     alt_need = [i for i in need if os.environ.get("ALT_IMAGES", "1") == "1"]
     if need and not offline:
-        prompts = [build_prompt(scenes[i]) for i in need] + \
-                  [build_prompt(scenes[i], ALT_SHOTS[(i + seed) % len(ALT_SHOTS)]) for i in alt_need]
+        prompts = [build_prompt(scenes[i], v2=V2) for i in need] + \
+                  [build_prompt(scenes[i], ALT_SHOTS[(i + seed) % len(ALT_SHOTS)], v2=V2) for i in alt_need]
         res = fetch_all_images(prompts, [paths[i] for i in need] + [alt_paths[i] for i in alt_need],
                                seed + need[0], budget=int(os.environ.get("IMAGE_BUDGET", "900")))
         got.update(dict(zip(need, res[:len(need)])))
@@ -634,20 +675,22 @@ def render(job, workdir, out_ig, out_yt, offline=False, fast=False):
             im = cover_resize(im.crop((SW // 10, SH // 10, SW - SW // 10, SH - SH // 10)), SW, SH)
         else:
             im = fallback_image(seed)
-        imgs.append(grade(im, mode))
+        imgs.append(grade(im, mode, V2))
     alts = []
     for i, sc in enumerate(scenes):
         a_im = None
         if alt_got.get(i):
             try:
                 a_im = grade(cover_resize(Image.open(alt_paths[i]).convert("RGB"), SW, SH),
-                             str(sc.get("color_mode", "WARM")).upper())
+                             str(sc.get("color_mode", "WARM")).upper(), V2)
             except Exception as e:  # noqa: BLE001
                 log(f"  alt image {i + 1} unreadable: {e}")
         alts.append(a_im)
     look = os.environ.get("LOOK") or str(job.get("look") or LOOKS[seed % len(LOOKS)])
     if look not in LOOKS:
         look = LOOKS[0]
+    if V2:
+        look = "parlak"
     log(f"look: {look}, alt images: {sum(a is not None for a in alts)}/{len(scenes)}")
 
     # 2) voice
@@ -719,7 +762,13 @@ def render(job, workdir, out_ig, out_yt, offline=False, fast=False):
     elif look == "belge":
         parch = parch * np.array([1.03, 0.97, 0.86], np.float32)
     letterbox = make_letterbox(look)
+    if V2:
+        parch = np.ones_like(parch)
+        vig0 = np.clip(1.04 - 0.32 * np.power(vig_d, 2.2), 0.0, 1.0)
     title_txt = str(job.get("title") or "")
+    cta = None
+    if V2:
+        cta = make_cta("2. BÖLÜM AKŞAM • TAKİP ET" if "1. Bölüm" in title_txt else "CEVABINI YORUMA YAZ")
     part = "BÖLÜM 1" if "1. Bölüm" in title_txt else ("BÖLÜM 2" if "2. Bölüm" in title_txt else "")
     badge = make_badge(part, look) if part else None
     info = make_info_card(job.get("place"), job.get("era"), look)
@@ -778,24 +827,30 @@ def render(job, workdir, out_ig, out_yt, offline=False, fast=False):
                 s *= 1.14
                 tx *= 0.6
                 ty = ty * 0.6 + (-40 if si % 2 else 40)
+        if V2 and si == 0 and lt < 0.5:   # hook: fast pull-back zoom in the first half second
+            s *= 1.0 + 0.28 * (1.0 - ease(lt / 0.5))
         fr = src.transform((W, H), Image.AFFINE, affine(s, tx, ty, rot), resample=Image.BICUBIC)
         frame = np.asarray(fr).astype(np.float32)
         # sliding shadows
         sh = int(W * 0.5 + 70 * (u - 0.5) * (1 if si % 2 else -1))
         light = lights[si][H // 2:H // 2 + H, sh:sh + W]
-        frame *= (0.72 + 0.4 * light)[..., None]
+        frame *= ((0.9 + 0.18 * light) if V2 else (0.72 + 0.4 * light))[..., None]
         dusts[si].draw(frame, lt, light)
         frame *= parch
         # vignette + slow darkening toward all edges at scene end, dark crossfade
         end = ease((lt - (d - 0.9)) / 0.9) if lt > d - 0.9 else 0.0
         begin = 1.0 - ease(lt / 0.45) if si > 0 else 1.0 - ease(lt / 0.25)
+        if V2:   # no dark dips: full brightness from frame one, quick light flash on every cut
+            end, begin = 0.0, 0.0
         vig = vig0 if end == 0.0 else np.clip(1.05 - (0.55 + 0.35 * end) * np.power(vig_d, 1.8 - 0.6 * end), 0.0, 1.0)
         frame *= vig[..., None]
         frame *= (1.0 - 0.85 * max(end * 0.7, begin))
+        if V2 and si > 0 and lt < 0.16:
+            frame *= 1.0 + 0.55 * (1.0 - lt / 0.16)
         # film grain (luma, clumped)
         if f % 2 == 0:
             g = np.random.standard_normal((H // 2, W // 2)).astype(np.float32)
-            g = g.repeat(2, 0).repeat(2, 1)[..., None] * 6.0
+            g = g.repeat(2, 0).repeat(2, 1)[..., None] * (3.5 if V2 else 6.0)
         frame += g
         if letterbox is not None:
             frame *= letterbox[..., None]
@@ -812,11 +867,17 @@ def render(job, workdir, out_ig, out_yt, offline=False, fast=False):
         if info is not None and info_t0 <= t < info_t0 + 2.8:
             ia = min(1.0, (t - info_t0) / 0.25, (info_t0 + 2.8 - t) / 0.3)
             blend(frame, info, 30 - int(40 * (1 - min(1.0, (t - info_t0) / 0.3))), int(H * 0.2), max(0.0, ia))
+        # call to action during the last scene
+        if cta is not None and si == len(scenes) - 1 and lt > 0.25:
+            pa = min(1.0, (lt - 0.25) / 0.2)
+            pulse = 1.0 + 0.04 * math.sin(2 * math.pi * 1.6 * lt)
+            ci2 = cta if abs(pulse - 1) < 0.005 else cta.resize((int(cta.width * pulse), int(cta.height * pulse)), Image.BILINEAR)
+            blend(frame, ci2, (W - ci2.width) // 2, int(H * 0.30) - ci2.height // 2, pa)
         # progress line (helps retention): top edge for sinema/belge
         if look != "arsiv":
             py = 8 if letterbox is None else 104
             pw = int(W * min(1.0, t / total))
-            col = np.array([214, 168, 64] if look == "sinema" else [176, 24, 26], np.float32)
+            col = np.array([214, 168, 64] if look == "sinema" else ([255, 210, 63] if V2 else [176, 24, 26]), np.float32)
             frame[py:py + 6, :] *= 0.45
             frame[py:py + 6, :pw] = col
         # cover (first 2.2 s)

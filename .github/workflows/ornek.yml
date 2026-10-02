@@ -1,0 +1,37 @@
+name: Ornek video (yeni gorunum)
+
+on:
+  workflow_dispatch: {}
+
+permissions:
+  contents: write
+
+jobs:
+  sample:
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v4
+      - name: Kurulum
+        run: |
+          command -v ffmpeg || (sudo apt-get update -qq && sudo apt-get install -y -qq ffmpeg)
+          pip install -q numpy pillow edge-tts fonttools
+          mkdir -p assets
+          F="ofl/oswald/Oswald%5Bwght%5D.ttf"
+          curl -fsSL --retry 5 --retry-delay 6 -o /tmp/Oswald.ttf "https://github.com/google/fonts/raw/main/$F" || curl -fsSL --retry 5 --retry-delay 6 -o /tmp/Oswald.ttf "https://cdn.jsdelivr.net/gh/google/fonts@main/$F"
+          fonttools varLib.instancer /tmp/Oswald.ttf wght=700 -q -o assets/Oswald-Bold.ttf
+      - name: Ornek video
+        env:
+          POLLINATIONS_TOKEN: ${{ secrets.POLLINATIONS_TOKEN }}
+          HORDE_API_KEY: ${{ secrets.HORDE_API_KEY }}
+          STYLE_V2: "1"
+        run: python render.py tools/ornek_job.json --out out
+      - name: Kaydet
+        run: |
+          git config user.name "tarihin-karanligi-bot"
+          git config user.email "tarihin-karanligi-bot@users.noreply.github.com"
+          git fetch -q origin state
+          git checkout -q -B state origin/state
+          mkdir -p sample && cp out/video_ig.mp4 sample/ornek_parlak.mp4
+          git add sample
+          git commit -q -m "Ornek video (yeni gorunum)" && git push -q origin state

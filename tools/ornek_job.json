@@ -1,0 +1,17 @@
+{
+ "title": "İstanbul Üstünde Uçan Adam: Hezarfen 🕊️",
+ "cover_text": "UÇAN ADAM",
+ "place": "Galata Kulesi",
+ "era": "On yedinci yüzyıl",
+ "style": "v2",
+ "seed": 2026,
+ "scenes": [
+  {"text": "Bir adam İstanbul'un üstünde gerçekten uçtu mu?", "scene": "The Galata Tower in Istanbul at golden sunset, a translucent frosted glass silhouette with huge feathered wings standing on the tower top, seagulls circling, the Bosphorus glittering far below", "color_mode": "WARM", "camera": "PUSH"},
+  {"text": "Rivayete göre Hezarfen Ahmed Çelebi Galata Kulesi'ne çıktı.", "scene": "Low angle view up the stone Galata Tower, crowds of translucent silhouettes in Ottoman clothes gathered at its base, colorful flags, dramatic glowing sky", "color_mode": "WARM", "camera": "RISE"},
+  {"text": "Kollarına kartal kanadı gibi kanatlar taktı.", "scene": "Close-up of handcrafted bird-like wings made of wood, eagle feathers and leather straps on an Ottoman workshop table, warm lantern light, sawdust in the air", "color_mode": "WARM", "camera": "ORBIT"},
+  {"text": "Evliya Çelebi, Boğaz'ı aşıp Üsküdar'a indiğini yazar.", "scene": "Wide aerial view of a winged translucent silhouette gliding over the Bosphorus toward the Uskudar shore, Ottoman mosques and wooden houses, sunlit water", "color_mode": "WARM", "camera": "DRIFT"},
+  {"text": "IV. Murad onu bir kese altınla ödüllendirdi.", "scene": "Ottoman palace hall with a sultan's throne, a velvet pouch of shining gold coins on a silver tray, rich carpets and blue Iznik tiles", "color_mode": "WARM", "camera": "PUSH"},
+  {"text": "Sonra ondan korkup Cezayir'e sürgün etti.", "scene": "An Ottoman galley ship sailing away at dusk toward a distant North African coast, a lone translucent silhouette standing on the deck, moonlit waves", "color_mode": "COLD", "camera": "DRIFT"},
+  {"text": "Sence kahraman mıydı, tehlikeli bir deha mı?", "scene": "The Galata Tower silhouette against a fiery orange sky with a single falling feather glowing in the foreground", "color_mode": "WARM", "camera": "RISE"}
+ ]
+}

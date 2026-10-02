@@ -269,6 +269,76 @@ def fallback_image(seed):
 
 
 # ----------------------------------------------------------------- voice
+_ORD = {1: "birinci", 2: "ikinci", 3: "üçüncü", 4: "dördüncü", 5: "beşinci", 6: "altıncı", 7: "yedinci",
+        8: "sekizinci", 9: "dokuzuncu", 10: "onuncu", 20: "yirminci", 30: "otuzuncu", 40: "kırkıncı",
+        50: "ellinci"}
+_TENS = {1: "on", 2: "yirmi", 3: "otuz", 4: "kırk", 5: "elli"}
+_ROMAN = {"I": 1, "V": 5, "X": 10, "L": 50}
+_ABBR = [(r"\bM\.\s?Ö\.", "milattan önce"), (r"\bM\.\s?S\.", "milattan sonra"), (r"\bHz\.", "Hazreti"),
+         (r"\bvb\.", "ve benzeri"), (r"\bvs\.", "vesaire"), (r"\bDr\.", "Doktor"), (r"\bSt\.", "Saint"),
+         (r"\byy\.", "yüzyıl"), (r"\bNo\.", "numara"), (r"%\s?(\d)", r"yüzde \1")]
+_UP = "A-ZÇĞİÖŞÜ"
+_LOW = "a-zçğıöşü"
+
+
+def _ordinal(n):
+    if n in _ORD:
+        return _ORD[n]
+    t, u = divmod(n, 10)
+    return f"{_TENS[t]} {_ORD[u]}"
+
+
+def _roman(s):
+    total, prev = 0, 0
+    for ch in reversed(s):
+        v = _ROMAN[ch]
+        total = total - v if v < prev else total + v
+        prev = max(prev, v)
+    return total
+
+
+def _cap(word, like):
+    return word[:1].upper() + word[1:] if like[:1].isupper() else word
+
+
+def speakable(text):
+    """Turn regnal numbers and abbreviations into words so the voice reads them correctly
+    (IV. Murad -> Dördüncü Murad, 4'üncü -> dördüncü, 16. yüzyıl -> on altıncı yüzyıl)."""
+    import re
+    s = str(text)
+    for pat, rep in _ABBR:
+        s = re.sub(pat, rep, s)
+
+    def roman(m):
+        n = _roman(m.group(1))
+        if not 1 <= n <= 59 or len(m.group(1)) > 6:
+            return m.group(0)
+        start = m.start() == 0 or s[:m.start()].rstrip().endswith((".", "!", "?", ":"))
+        w = _ordinal(n)
+        return (w[:1].upper() + w[1:] if start else w) + " "
+    # IV. Murad / II.Mehmed / XVI. yüzyıl / IV Murad
+    s = re.sub(rf"\b([IVXL]{{1,6}})\.\s*(?=[{_UP}{_LOW}])", roman, s)
+    s = re.sub(rf"\b([IVXL]{{2,6}})\s+(?=[{_UP}][{_LOW}])", roman, s)
+    # 4'üncü / 4’üncü / 4üncü / 4.'üncü
+    def suffix(m):
+        n = int(m.group(1))
+        return _ordinal(n) if 1 <= n <= 59 else m.group(0)
+    s = re.sub(r"\b(\d{1,2})\.?\s?['’]?\s?(?:inci|ıncı|uncu|üncü|nci|ncı|ncu|ncü)\b", suffix, s)
+    # 4. Murad / 16. yüzyıl (1-2 digit number + dot + word, not at sentence end)
+    def dotted(m):
+        n = int(m.group(1))
+        if not 1 <= n <= 59:
+            return m.group(0)
+        start = m.start() == 0 or s[:m.start()].rstrip().endswith((".", "!", "?", ":"))
+        w = _ordinal(n)
+        return (w[:1].upper() + w[1:] if start else w) + " "
+    s = re.sub(rf"(?<![\d.,])\b(\d{{1,2}})\.\s+(?=[{_UP}{_LOW}])", dotted, s)
+    s = re.sub(r"\s{2,}", " ", s).strip()
+    if s[:1].islower():
+        s = ("İ" if s[0] == "i" else s[0].upper()) + s[1:]
+    return s
+
+
 async def _tts(text, mp3, rate, pitch):
     import edge_tts
     words = []
@@ -291,6 +361,7 @@ def decode_wav(src, dst):
 
 def synth_voice(text, workdir, idx, offline):
     mp3, wav = workdir / f"v{idx}.mp3", workdir / f"v{idx}.wav"
+    text = speakable(text)
     if offline:
         toks = text.split()
         words, t = [], 0.15

@@ -1,0 +1,42 @@
+name: Karakter testi
+
+on:
+  workflow_dispatch: {}
+
+permissions:
+  contents: write
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v4
+      - name: Kurulum
+        run: pip install -q numpy pillow "rembg[cpu]" || pip install -q numpy pillow rembg onnxruntime
+      - name: Ana karakterler
+        env:
+          POLLINATIONS_TOKEN: ${{ secrets.POLLINATIONS_TOKEN }}
+        run: |
+          cp tools/karakter_test.py /tmp/kt.py
+          python /tmp/kt.py a /tmp/k
+      - name: Kaydet 1
+        run: |
+          git config user.name "tarihin-karanligi-bot"
+          git config user.email "tarihin-karanligi-bot@users.noreply.github.com"
+          git fetch -q origin state
+          git checkout -q -f -B state origin/state
+          rm -rf sample/karakter && mkdir -p sample/karakter && cp /tmp/k/* sample/karakter/
+          git add sample && git commit -q -m "Karakter testi 1" && git push -q origin state
+      - name: Poz denemeleri
+        continue-on-error: true
+        env:
+          POLLINATIONS_TOKEN: ${{ secrets.POLLINATIONS_TOKEN }}
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+        run: python /tmp/kt.py b /tmp/k "https://raw.githubusercontent.com/${{ github.repository }}/state/sample/karakter/"
+      - name: Kaydet 2
+        if: always()
+        run: |
+          rm -f /tmp/k/_tmp.png
+          cp /tmp/k/* sample/karakter/
+          git add sample && git commit -q -m "Karakter testi 2" && git push -q origin state || true

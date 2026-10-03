@@ -26,6 +26,7 @@ def clean_json(txt):
 SITE_URL = "https://heyet01.github.io/tarihin-karanligi-video/"
 FORBIDDEN = re.compile(r"\w*yıl(?:dır|\s+önce|\s+sonra)\b", re.IGNORECASE)
 CLIFF = "Devamı akşam! Kaçırmamak için takip et."
+WORLD = "Dünya gizemleri"
 MYSTERY = (
     "GİZEM AÇISI (kanalın imza tarzı): Konuyu çözülmeyi bekleyen bir sır dosyası gibi anlat. "
     "İlk cümle bir sırrı, çelişkiyi ya da cevabı merak edilen bir neden/nasıl sorusunu açsın "
@@ -85,7 +86,12 @@ def plan(state, now):
     used = set(state.get("used", []))
     fresh = [p for p in pool if p[1] not in used] or pool
     last_cat = state.get("last_category")
-    other = [p for p in fresh if p[0] != last_cat] or fresh
+    # every other video is a world mystery (best performers), the rest rotate through Turkish history
+    world = [p for p in fresh if p[0] == WORLD]
+    if world and last_cat != WORLD:
+        return {"category": WORLD, "topic": random.choice(world)[1], "part": 0}
+    turkish = [p for p in fresh if p[0] != WORLD] or fresh
+    other = [p for p in turkish if p[0] != last_cat] or turkish
     # balanced rotation: prefer the category used least recently
     recent_cats = state.get("recent_categories", [])
     def staleness(cat):
@@ -94,8 +100,8 @@ def plan(state, now):
     choices = [p for p in other if staleness(p[0]) == best]
     cat = random.choice(sorted({c for c, _ in choices}))
     topic = random.choice([t for c, t in choices if c == cat])
-    part = 1 if now.hour < 15 else 0
-    return {"category": cat, "topic": topic, "part": part}
+    # single, complete stories only (the two-part series format performed poorly); old series still get finished above
+    return {"category": cat, "topic": topic, "part": 0}
 
 
 def brief_for(pl, state):
@@ -103,6 +109,10 @@ def brief_for(pl, state):
     lines = [f"BUGÜNÜN KONUSU (SADECE bunu anlat, başka konu seçme): {pl['topic']}  [{pl['category']}]",
              f"Kanalın son video başlıkları (açılış ve başlık kalıplarını tekrarlama): {recent}",
              MYSTERY]
+    if pl.get("category") == WORLD:
+        lines.append("NOT: Kanal Türk tarihinin yanında dünya tarihinin ünlü ve iyi belgelenmiş gizemlerini de anlatır; "
+                     "bu konu dünya tarihinden. Türk tarihiyle zorla bağlantı kurma. description'daki ikinci hashtag "
+                     "#dünyatarihi olsun.")
     if pl["part"] == 1:
         lines.append(
             "BÖLÜM KURALI: Bu 1. BÖLÜM (öğle videosu). TAM 5 sahne, toplam 26-31 kelime. "

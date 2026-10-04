@@ -1,0 +1,43 @@
+name: Cizgi dizi bolum
+
+on:
+  workflow_dispatch:
+    inputs:
+      episode:
+        description: "episode json in cizgi/episodes"
+        required: false
+        default: "pilot_tr.json"
+
+permissions:
+  contents: write
+
+jobs:
+  bolum:
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v4
+      - name: Kurulum
+        run: |
+          command -v ffmpeg || (sudo apt-get update -qq && sudo apt-get install -y -qq ffmpeg)
+          pip install -q numpy pillow edge-tts fonttools
+          mkdir -p assets
+          get() { curl -fsSL --retry 5 --retry-delay 6 -o "$1" "https://github.com/google/fonts/raw/main/$2" || curl -fsSL --retry 5 --retry-delay 6 -o "$1" "https://cdn.jsdelivr.net/gh/google/fonts@main/$2"; }
+          get /tmp/B.ttf "ofl/baloo2/Baloo2%5Bwght%5D.ttf" && fonttools varLib.instancer /tmp/B.ttf wght=800 -q -o assets/Baloo2-Bold.ttf || true
+          get /tmp/O.ttf "ofl/oswald/Oswald%5Bwght%5D.ttf" && fonttools varLib.instancer /tmp/O.ttf wght=700 -q -o assets/Oswald-Bold.ttf || true
+          git fetch -q origin state
+          mkdir -p /tmp/lib && git archive origin/state cizgi/lib | tar -x -C /tmp/lib --strip-components=2
+          cp cizgi/choice.json /tmp/lib/choice.json
+          ls /tmp/lib /tmp/lib/png | head -80
+      - name: Bolum
+        run: python tools/cizgi_bolum.py "cizgi/episodes/${{ inputs.episode }}" /tmp/lib out_bolum
+      - name: Kaydet
+        run: |
+          git config user.name "tarihin-karanligi-bot"
+          git config user.email "tarihin-karanligi-bot@users.noreply.github.com"
+          mkdir -p /tmp/bz && cp out_bolum/bolum.mp4 out_bolum/kapak.jpg out_bolum/info.json out_bolum/*.srt /tmp/bz/
+          git checkout -q -f -B state origin/state
+          rm -rf sample/bolum && mkdir -p sample/bolum && cp /tmp/bz/* sample/bolum/
+          git add sample
+          git commit -q -m "Cizgi dizi bolum" || exit 0
+          for i in 1 2 3; do git push -q origin state && break; git pull -q --rebase origin state; done

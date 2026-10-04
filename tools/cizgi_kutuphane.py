@@ -221,8 +221,25 @@ def main():
         time.sleep(4)
     bgs = dict(BGS)
     cat = Path(__file__).resolve().parent.parent / "cizgi" / "sahneler.json"
-    if cat.exists():
-        bgs.update({k: v["en"] for k, v in json.loads(cat.read_text(encoding="utf-8")).items()})
+    catalog = json.loads(cat.read_text(encoding="utf-8")) if cat.exists() else {}
+    bgs.update({k: v["en"] for k, v in catalog.items()})
+    # backgrounds made by AI Horde look more photographic; upgrade them to flux when the pollen budget allows
+    flux_done = set(REPORT.get("flux_bgs") or []) | set(BGS)
+    upgrade = [k for k in bgs if k not in flux_done and (lib / "bg" / f"{k}_1.jpg").exists()]
+    upgrade.sort(key=lambda k: not catalog.get(k, {}).get("flux_only"))
+    for name in upgrade:
+        bal = balance_value()
+        if bal is None or bal < RESERVE:
+            break
+        p = lib / "bg" / f"{name}_1.jpg"
+        tmp = lib / "bg" / f"_{name}.jpg"
+        res = poll(f"{bgs[name]}, {BG_STYLE}", tmp, 307, w=1344, h=768)
+        log("flux upgrade", name, res)
+        if res != "ok":
+            break
+        tmp.replace(p)
+        REPORT["flux_bgs"] = sorted(set(REPORT.get("flux_bgs") or []) | {name})
+        run["made"].append("flux:" + name)
     todo = [(n, d) for n, d in bgs.items() if not (lib / "bg" / f"{n}_1.jpg").exists()]
     if todo:
         from concurrent.futures import ThreadPoolExecutor

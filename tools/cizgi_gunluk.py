@@ -82,7 +82,8 @@ def gemini(prompt, system):
                        "generationConfig": {"temperature": 0.9, "maxOutputTokens": 65536,
                                             "responseMimeType": "application/json"}}).encode()
     last = None
-    for model in ["gemini-flash-latest", "gemini-3.5-flash", "gemini-2.5-flash", "gemini-flash-latest"]:
+    models = ["gemini-flash-latest", "gemini-3.5-flash", "gemini-flash-lite-latest"] * 4   # 503 'overloaded' is common
+    for attempt, model in enumerate(models):
         try:
             req = urllib.request.Request(
                 f"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent",
@@ -100,7 +101,7 @@ def gemini(prompt, system):
         except Exception as e:  # noqa: BLE001
             last = e
             log("gemini", model, "failed:", str(e)[:300])
-            time.sleep(20)
+            time.sleep(20 + 15 * attempt)
     raise RuntimeError(f"gemini failed: {last}")
 
 
@@ -115,7 +116,10 @@ def available(lib):
     for c in CHARS:
         poses[c] = [p for p in poses[c] if p != "master"] or ["happy"]
     cat = json.loads((ROOT / "cizgi" / "sahneler.json").read_text(encoding="utf-8"))
-    bgs = {k: v for k, v in cat.items() if (lib / "bg" / f"{k}_1.jpg").exists() or (lib / "bg" / f"{k}_2.jpg").exists()}
+    rp = lib / "report.json"
+    flux = set(json.loads(rp.read_text()).get("flux_bgs") or []) if rp.exists() else set()
+    bgs = {k: v for k, v in cat.items() if ((lib / "bg" / f"{k}_1.jpg").exists() or (lib / "bg" / f"{k}_2.jpg").exists())
+           and (not v.get("flux_only") or k in flux)}
     return poses, bgs
 
 

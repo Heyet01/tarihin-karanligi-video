@@ -1,28 +1,112 @@
 {
- "park_wide": {"tr": "güneşli şehir parkı: laleler, taş yol, bank, büyük çınar", "en": "a sunny green city park in a Turkish town with yellow tulips, a stone path, benches and a huge old plane tree on the right, blue sky with soft clouds"},
- "park_path": {"tr": "parkta iki yanı lalelerle dolu yürüyüş yolu ve bank", "en": "a sunny park path lined with yellow and red tulips and green bushes, a wooden bench, trees"},
- "park_tree": {"tr": "parkta kocaman yaşlı çınar ağacının altı, çimenler", "en": "a huge old plane tree in a sunny park, thick trunk and wide branches, green lawn in front"},
- "park_sunset": {"tr": "gün batımında parkta yeşil tepe, turuncu gökyüzü", "en": "a green park hill at sunset, orange and pink sky, soft golden light, a few trees"},
- "home_living": {"tr": "evin oturma odası: kanepe, halı, oyuncaklar, güneşli pencere", "en": "a cozy bright family living room in a Turkish home, a soft sofa with cushions, a patterned carpet, a few toys on the floor, a big sunny window with curtains"},
- "kids_bedroom": {"tr": "Mina ile Efe'nin yatak odası: iki küçük yatak, oyuncak rafı", "en": "a colourful children's bedroom with two small beds with blankets, a toy shelf, star stickers on the wall, a sunny window"},
- "kitchen": {"tr": "evin aydınlık mutfağı: masa, meyve tabağı, dolap", "en": "a bright clean family kitchen with a wooden table and chairs, a bowl of fruit, cupboards, a window with plants"},
- "bathroom": {"tr": "banyo: lavabo, ayna, diş fırçaları, havlular", "en": "a clean bright bathroom with a low sink, a round mirror, toothbrushes in a cup, colourful towels, a small step stool"},
- "home_garden": {"tr": "evin bahçesi: sebze tarhları, çiçekler, tahta çit", "en": "a small sunny home garden with vegetable beds, tomato plants, flowers, a little wooden fence and a watering can"},
- "kindergarten": {"tr": "anaokulu sınıfı: küçük masalar, duvarda resimler", "en": "a bright cheerful kindergarten classroom with small round tables and chairs, colourful children's drawings on the walls, shelves with toys and books"},
- "playground": {"tr": "oyun parkı: kaydırak, salıncak, kum havuzu", "en": "a colourful children's playground with a slide, swings and a sandpit, soft green grass, sunny day"},
- "beach": {"tr": "güneşli kumsal ve sakin deniz", "en": "a sunny sandy beach with calm turquoise sea, small waves, a few shells on the sand, blue sky"},
- "forest_path": {"tr": "güneşli orman yolu: mantarlar, çiçekler, ağaçlar", "en": "a friendly sunny forest path with tall green trees, little mushrooms and wild flowers, light rays through the leaves"},
- "farm": {"tr": "çiftlik: kırmızı ahır, çit, saman balyaları", "en": "a cheerful farmyard with a red barn, a wooden fence, hay bales, green hills behind"},
- "street": {"tr": "küçük kasaba sokağı: renkli evler, kaldırım, yaya geçidi", "en": "a quiet small town street with colourful houses, a wide sidewalk, a zebra crossing and a traffic light"},
- "market": {"tr": "açık hava pazarı: meyve ve sebze tezgâhları", "en": "an open-air fruit and vegetable market with colourful stalls full of apples, oranges, tomatoes and watermelons, striped awnings"},
- "bakery": {"tr": "fırın dükkânı: raflarda ekmekler, simitler", "en": "a cozy bakery shop interior with shelves of bread loaves and round sesame bagels, a glass counter, warm light"},
- "library": {"tr": "çocuk kütüphanesi: kitap rafları, minderler", "en": "a cozy children's library with low colourful bookshelves full of picture books, soft cushions and a rug"},
- "doctor": {"tr": "çocuk doktorunun muayenehanesi", "en": "a friendly bright paediatric doctor's office with a small examination bed, a height chart on the wall, toys in a corner"},
- "picnic": {"tr": "çayırda piknik örtüsü ve sepet, ağaç gölgesi", "en": "a green meadow with a red checked picnic blanket and a wicker basket under a shady tree, flowers, sunny day"},
- "lake": {"tr": "göl kıyısı: tahta iskele, ördekler", "en": "a calm lake shore with a small wooden dock, ducks on the water, reeds and trees, sunny day"},
- "snowy_park": {"tr": "karlı kış parkı, kardan adam", "en": "a snowy winter park with white trees, a small snowman, soft falling snow, bright day"},
- "night_bedroom": {"tr": "gece yatak odası: ay ışığı, gece lambası", "en": "a children's bedroom at night, soft moonlight through the window, a warm little night lamp, stars outside"},
- "zoo": {"tr": "hayvanat bahçesi yolu, arkada zürafalar", "en": "a sunny zoo path with a giraffe enclosure and trees in the background, a signpost, green bushes"},
- "schoolyard": {"tr": "okul bahçesi: ağaçlar, bank, okul binası", "en": "a sunny schoolyard with a small friendly school building, trees, benches and painted hopscotch on the ground"},
- "kite_sky": {"tr": "KARAKTERSİZ: gökyüzünde uçan kırmızı uçurtma", "en": "a small red diamond-shaped kite with a long ribbon tail flying high in a bright blue sky with fluffy white clouds above the green treetops of a park", "empty": true}
+ "park_wide": {
+  "tr": "güneşli şehir parkı: laleler, taş yol, bank, büyük çınar",
+  "en": "a sunny green city park in a Turkish town with yellow tulips, a stone path, benches and a huge old plane tree on the right, blue sky with soft clouds"
+ },
+ "park_path": {
+  "tr": "parkta iki yanı lalelerle dolu yürüyüş yolu ve bank",
+  "en": "a sunny park path lined with yellow and red tulips and green bushes, a wooden bench, trees"
+ },
+ "park_tree": {
+  "tr": "parkta kocaman yaşlı çınar ağacının altı, çimenler",
+  "en": "a huge old plane tree in a sunny park, thick trunk and wide branches, green lawn in front"
+ },
+ "park_sunset": {
+  "tr": "gün batımında parkta yeşil tepe, turuncu gökyüzü",
+  "en": "a green park hill at sunset, orange and pink sky, soft golden light, a few trees"
+ },
+ "home_living": {
+  "tr": "evin oturma odası: kanepe, halı, oyuncaklar, güneşli pencere",
+  "en": "a cozy bright family living room in a Turkish home, a soft sofa with cushions, a patterned carpet, a few toys on the floor, a big sunny window with curtains"
+ },
+ "kids_bedroom": {
+  "tr": "Mina ile Efe'nin yatak odası: iki küçük yatak, oyuncak rafı",
+  "en": "a colourful children's bedroom with two small beds with blankets, a toy shelf, star stickers on the wall, a sunny window"
+ },
+ "kitchen": {
+  "tr": "evin aydınlık mutfağı: masa, meyve tabağı, dolap",
+  "en": "a bright clean family kitchen with a wooden table and chairs, a bowl of fruit, cupboards, a window with plants"
+ },
+ "bathroom": {
+  "tr": "banyo: lavabo, ayna, diş fırçaları, havlular",
+  "en": "a clean bright bathroom with a low sink, a round mirror, toothbrushes in a cup, colourful towels, a small step stool"
+ },
+ "home_garden": {
+  "tr": "evin bahçesi: sebze tarhları, çiçekler, tahta çit",
+  "en": "a small sunny home garden with vegetable beds, tomato plants, flowers, a little wooden fence and a watering can"
+ },
+ "kindergarten": {
+  "tr": "anaokulu sınıfı: küçük masalar, duvarda resimler",
+  "en": "a bright cheerful kindergarten classroom with small round tables and chairs, colourful children's drawings on the walls, shelves with toys and books",
+  "flux_only": true
+ },
+ "playground": {
+  "tr": "oyun parkı: kaydırak, salıncak, kum havuzu",
+  "en": "a colourful children's playground with a slide, swings and a sandpit, soft green grass, sunny day"
+ },
+ "beach": {
+  "tr": "güneşli kumsal ve sakin deniz",
+  "en": "a sunny sandy beach with calm turquoise sea, small waves, a few shells on the sand, blue sky",
+  "flux_only": true
+ },
+ "forest_path": {
+  "tr": "güneşli orman yolu: mantarlar, çiçekler, ağaçlar",
+  "en": "a friendly sunny forest path with tall green trees, little mushrooms and wild flowers, light rays through the leaves"
+ },
+ "farm": {
+  "tr": "çiftlik: kırmızı ahır, çit, saman balyaları",
+  "en": "a cheerful farmyard with a red barn, a wooden fence, hay bales, green hills behind"
+ },
+ "street": {
+  "tr": "küçük kasaba sokağı: renkli evler, kaldırım, yaya geçidi",
+  "en": "a quiet small town street with colourful houses, a wide sidewalk, a zebra crossing and a traffic light",
+  "flux_only": true
+ },
+ "market": {
+  "tr": "açık hava pazarı: meyve ve sebze tezgâhları",
+  "en": "an open-air fruit and vegetable market with colourful stalls full of apples, oranges, tomatoes and watermelons, striped awnings",
+  "flux_only": true
+ },
+ "bakery": {
+  "tr": "fırın dükkânı: raflarda ekmekler, simitler",
+  "en": "a cozy bakery shop interior with shelves of bread loaves and round sesame bagels, a glass counter, warm light"
+ },
+ "library": {
+  "tr": "çocuk kütüphanesi: kitap rafları, minderler",
+  "en": "a cozy children's library with low colourful bookshelves full of picture books, soft cushions and a rug"
+ },
+ "doctor": {
+  "tr": "çocuk doktorunun muayenehanesi",
+  "en": "a friendly bright paediatric doctor's office with a small examination bed, a height chart on the wall, toys in a corner"
+ },
+ "picnic": {
+  "tr": "çayırda piknik örtüsü ve sepet, ağaç gölgesi",
+  "en": "a green meadow with a red checked picnic blanket and a wicker basket under a shady tree, flowers, sunny day"
+ },
+ "lake": {
+  "tr": "göl kıyısı: tahta iskele, ördekler",
+  "en": "a calm lake shore with a small wooden dock, ducks on the water, reeds and trees, sunny day"
+ },
+ "snowy_park": {
+  "tr": "karlı kış parkı, kardan adam",
+  "en": "a snowy winter park with white trees, a small snowman, soft falling snow, bright day"
+ },
+ "night_bedroom": {
+  "tr": "gece yatak odası: ay ışığı, gece lambası",
+  "en": "a children's bedroom at night, soft moonlight through the window, a warm little night lamp, stars outside"
+ },
+ "zoo": {
+  "tr": "hayvanat bahçesi yolu, arkada zürafalar",
+  "en": "a sunny zoo path with a giraffe enclosure and trees in the background, a signpost, green bushes",
+  "flux_only": true
+ },
+ "schoolyard": {
+  "tr": "okul bahçesi: ağaçlar, bank, okul binası",
+  "en": "a sunny schoolyard with a small friendly school building, trees, benches and painted hopscotch on the ground"
+ },
+ "kite_sky": {
+  "tr": "KARAKTERSİZ: gökyüzünde uçan kırmızı uçurtma",
+  "en": "a small red diamond-shaped kite with a long ribbon tail flying high in a bright blue sky with fluffy white clouds above the green treetops of a park",
+  "empty": true
+ }
 }

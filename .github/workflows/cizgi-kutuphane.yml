@@ -28,6 +28,7 @@ jobs:
       - name: Pozlar ve arka planlar
         env:
           POLLINATIONS_TOKEN: ${{ secrets.POLLINATIONS_TOKEN }}
+          HORDE_API_KEY: ${{ secrets.HORDE_API_KEY }}
         run: python tools/cizgi_kutuphane.py /tmp/lib "https://raw.githubusercontent.com/${{ github.repository }}/state/sample/karakter/"
       - name: Kaydet
         if: always()

@@ -8,6 +8,7 @@ usage: python tools/cizgi_bolum.py EPISODE.json LIB_DIR OUT_DIR [--offline]
 import asyncio
 import json
 import math
+import os
 import subprocess
 import sys
 import time
@@ -24,9 +25,9 @@ SLOTS = {"left": 0.22, "midleft": 0.38, "center": 0.5, "midright": 0.62, "right"
 BODY = {"mina": 0.56, "efe": 0.47, "dede": 0.74}     # head-to-feet height as fraction of frame height
 GAP = 24                          # minimum pixels between two characters
 VOICES = {
-    "tr": {"anlatici": ("tr-TR-AhmetNeural", "+0%", "+0Hz"), "mina": ("tr-TR-EmelNeural", "+6%", "+18Hz"),
+    "tr": {"anlatici": ("tr-TR-AhmetNeural", "-4%", "+0Hz"), "mina": ("tr-TR-EmelNeural", "+6%", "+18Hz"),
            "efe": ("tr-TR-EmelNeural", "+10%", "+42Hz"), "dede": ("tr-TR-AhmetNeural", "-6%", "-6Hz")},
-    "en": {"anlatici": ("en-US-AndrewNeural", "+0%", "+0Hz"), "mina": ("en-US-AnaNeural", "+0%", "+0Hz"),
+    "en": {"anlatici": ("en-US-AndrewNeural", "-4%", "+0Hz"), "mina": ("en-US-AnaNeural", "+0%", "+0Hz"),
            "efe": ("en-US-AnaNeural", "+8%", "+30Hz"), "dede": ("en-US-GuyNeural", "-6%", "-8Hz")},
 }
 
@@ -176,21 +177,24 @@ def say(lang, who, text, work, idx, offline):
 
 
 def music(n, seed=0):
+    """Soft background tune; the melody changes every 16 beats (A A B A C ...) so long episodes do not loop."""
     rng = np.random.default_rng(seed)
     t = np.arange(n) / SR
     scale = [0, 2, 4, 7, 9, 12]
     root, beat = 261.63 * 2 ** (int(rng.integers(-3, 3)) / 12), 0.5
-    pattern = [int(rng.choice(scale)) for _ in range(16)]
+    phrases = [[int(rng.choice(scale)) for _ in range(16)] for _ in range(4)]
+    form = [0, 0, 1, 0, 2, 2, 3, 0]
     out = np.zeros(n, np.float32)
     for k in range(int(n / SR / beat) + 1):
-        f = root * 2 ** (pattern[k % 16] / 12)
+        pat = phrases[form[(k // 16) % len(form)]]
+        f = root * 2 ** (pat[k % 16] / 12)
         i0 = int(k * beat * SR)
         seg = np.arange(max(0, min(int(0.45 * SR), n - i0))) / SR
         if not len(seg):
             break
         out[i0:i0 + len(seg)] += (0.5 * np.sin(2 * np.pi * f * seg) + 0.15 * np.sin(4 * np.pi * f * seg)) * np.exp(-seg * 6)
     pad = 0.12 * np.sin(2 * np.pi * root / 2 * t) * (0.6 + 0.4 * np.sin(2 * np.pi * 0.1 * t))
-    return (out + pad) * 0.07
+    return (out + pad) * 0.055
 
 
 # ------------------------------------------------------------------ cards
@@ -245,7 +249,7 @@ def render(ep, lib, out, offline=False):
     lang = ep.get("lang", "tr")
     work = out / "work"
     work.mkdir(parents=True, exist_ok=True)
-    TITLE, IRIS, PAUSE, END = 4.0, 0.35, 0.3, 5.0
+    TITLE, IRIS, PAUSE, END = 4.0, 0.35, 0.45, 5.0
     sc_list = ep["scenes"]
     tr_in = ["iris" if i == 0 or sc["bg"] != sc_list[i - 1]["bg"] else "cut" for i, sc in enumerate(sc_list)]
     t, idx = TITLE, 0
@@ -289,7 +293,7 @@ def render(ep, lib, out, offline=False):
                {"mina": "wave", "efe": "wave"})
     proc = subprocess.Popen(["ffmpeg", "-y", "-loglevel", "error", "-f", "rawvideo", "-pix_fmt", "rgb24",
                              "-s", f"{W}x{H}", "-r", str(FPS), "-i", "-", "-i", str(wav), "-c:v", "libx264",
-                             "-preset", "medium", "-crf", "20", "-pix_fmt", "yuv420p", "-c:a", "aac", "-b:a", "160k",
+                             "-preset", "medium", "-crf", os.environ.get("CIZGI_CRF", "21"), "-pix_fmt", "yuv420p", "-c:a", "aac", "-b:a", "160k",
                              "-shortest", "-movflags", "+faststart", str(out / "bolum.mp4")], stdin=subprocess.PIPE)
     end_t = scenes[-1]["t1"]
     for fi in range(int(total * FPS)):

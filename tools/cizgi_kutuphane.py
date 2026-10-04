@@ -136,7 +136,11 @@ def main():
         if res == "ok":
             run["made"].append(p.name)
         time.sleep(4)
-    for name, desc in BGS.items():
+    bgs = dict(BGS)
+    cat = Path(__file__).resolve().parent.parent / "cizgi" / "sahneler.json"
+    if cat.exists():
+        bgs.update({k: v["en"] for k, v in json.loads(cat.read_text(encoding="utf-8")).items()})
+    for name, desc in bgs.items():
         p = lib / "bg" / f"{name}_1.jpg"
         if p.exists():
             continue

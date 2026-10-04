@@ -101,6 +101,85 @@ def balance():
     return out
 
 
+def balance_value():
+    token = os.environ.get("POLLINATIONS_TOKEN", "").strip()
+    try:
+        req = urllib.request.Request("https://gen.pollinations.ai/account/balance",
+                                     headers={"Authorization": f"Bearer {token}", "User-Agent": "tk-bot/1.0"})
+        with urllib.request.urlopen(req, timeout=30) as r:
+            return float(json.loads(r.read()).get("balance", 0))
+    except Exception:  # noqa: BLE001
+        return None
+
+
+HORDE_MODELS = ["AlbedoBase XL (SDXL)", "Juggernaut XL", "Dreamshaper", "stable_diffusion"]
+HORDE_NEG = "people, person, child, character, animal, text, letters, watermark, logo, blurry, deformed, dark"
+
+
+def horde(prompt, path, seed, deadline):
+    """Free community GPUs (AI Horde) for backgrounds, so the small Pollinations budget is kept for poses."""
+    key = os.environ.get("HORDE_API_KEY", "").strip() or "0000000000"
+    hdr = {"apikey": key, "Client-Agent": "tarihin-karanligi:1.0:github", "Content-Type": "application/json",
+           "User-Agent": "tarihin-karanligi-bot/1.0"}
+    body = {"prompt": prompt[:850] + " ### " + HORDE_NEG,
+            "params": {"width": 1024, "height": 576, "steps": 28, "cfg_scale": 6.5, "n": 1,
+                       "sampler_name": "k_euler_a", "karras": True, "seed": str(seed)},
+            "models": HORDE_MODELS, "nsfw": False, "censor_nsfw": True, "r2": True,
+            "slow_workers": True, "trusted_workers": False}
+    base = "https://aihorde.net/api/v2/generate/"
+
+    def call(url, data=None, method=None, timeout=40):
+        req = urllib.request.Request(url, headers=hdr, data=data, method=method)
+        with urllib.request.urlopen(req, timeout=timeout) as r:
+            return r.read()
+    jid = None
+    for attempt in range(6):
+        try:
+            jid = json.loads(call(base + "async", json.dumps(body).encode()))["id"]
+            break
+        except Exception as e:  # noqa: BLE001
+            log("  horde submit", attempt + 1, str(e)[:120])
+            time.sleep(20 + 10 * attempt)
+    if not jid:
+        return "horde submit failed"
+    while time.time() < deadline:
+        time.sleep(10)
+        try:
+            chk = json.loads(call(base + "check/" + jid, timeout=30))
+        except Exception:  # noqa: BLE001
+            continue
+        if chk.get("faulted") or not chk.get("is_possible", True):
+            return "horde impossible"
+        if chk.get("done"):
+            try:
+                g = (json.loads(call(base + "status/" + jid, timeout=60)).get("generations") or [{}])[0]
+                if g.get("censored"):
+                    return "horde censored"
+                img = g.get("img", "")
+                if img.startswith("http"):
+                    with urllib.request.urlopen(urllib.request.Request(img, headers={"User-Agent": "tk-bot/1.0"}),
+                                                timeout=60) as r:
+                        data = r.read()
+                else:
+                    import base64
+                    data = base64.b64decode(img)
+                from PIL import Image
+                import io
+                Image.open(io.BytesIO(data)).convert("RGB").save(path, "JPEG", quality=94)
+                log("  horde ok", g.get("model"))
+                return "ok"
+            except Exception as e:  # noqa: BLE001
+                return "horde fetch " + str(e)[:100]
+    try:
+        call(base + "status/" + jid, method="DELETE", timeout=20)
+    except Exception:  # noqa: BLE001
+        pass
+    return "horde timeout"
+
+
+RESERVE = 0.06   # pollen left for the Tarihin Karanligi daily images
+
+
 def main():
     lib, base = Path(sys.argv[1]), sys.argv[2]
     for d in ("raw", "bg", "png"):
@@ -128,6 +207,10 @@ def main():
         p = lib / "raw" / f"{job}_1.jpg"
         if p.exists():
             continue
+        bal = balance_value()
+        if bal is not None and bal < RESERVE:
+            run["budget_hit"] = f"reserve ({bal}) " + time.strftime("%H:%M UTC", time.gmtime())
+            break
         res = poll(KEEP.format(pose=POSES[pose]), p, 111, model="kontext", image=base + MASTERS[ch])
         log(p.name, res)
         if res == "budget":
@@ -140,14 +223,21 @@ def main():
     cat = Path(__file__).resolve().parent.parent / "cizgi" / "sahneler.json"
     if cat.exists():
         bgs.update({k: v["en"] for k, v in json.loads(cat.read_text(encoding="utf-8")).items()})
-    for name, desc in bgs.items():
-        p = lib / "bg" / f"{name}_1.jpg"
-        if p.exists():
-            continue
-        res = poll(f"{desc}, {BG_STYLE}", p, 307, w=1344, h=768)
-        log(p.name, res)
-        if res == "ok":
-            run["made"].append(p.name)
+    todo = [(n, d) for n, d in bgs.items() if not (lib / "bg" / f"{n}_1.jpg").exists()]
+    if todo:
+        from concurrent.futures import ThreadPoolExecutor
+        deadline = time.time() + 25 * 60
+
+        def one(item):
+            name, desc = item
+            p = lib / "bg" / f"{name}_1.jpg"
+            res = horde(f"{desc}, {BG_STYLE}", p, 307, deadline)
+            log(p.name, res)
+            return p.name, res
+        with ThreadPoolExecutor(3) as ex:
+            for name, res in ex.map(one, todo):
+                if res == "ok":
+                    run["made"].append(name)
     try:
         from PIL import Image
         from rembg import new_session, remove

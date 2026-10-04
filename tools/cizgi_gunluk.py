@@ -60,14 +60,14 @@ Kullanabileceğin mekânlar (bg alanına SADECE bu adlardan birini yaz):
 Karakter pozları (pose alanında SADECE bunlar):
 @POSES@
 
-Uzunluk: 24-30 sahne, toplam 200-240 satır (yaklaşık 14 dakika). Her sahnede 4-12 satır.
+Uzunluk: 30-36 sahne, toplam 290-330 satır (yaklaşık 14-15 dakika). Her sahnede 6-12 satır. Bu uzunluk ÇOK ÖNEMLİ.
 Bir sahnede en fazla 3 karakter durur; yerleri: left, midleft, center, midright, right (farklı olmalı).
 Konuşan karakter o sahnede bulunmalı (anlatıcı hariç). Duygu değişince "pose" ile pozu değiştir
 (ör. üzülünce sad, şaşırınca surprised, gülünce laugh, gösterirken point, düşünürken think, selamlarken wave).
 Aynı mekânda arka arkaya en fazla 3 sahne olsun; bölüm 4-7 farklı mekân kullansın.
 
 JSON şeması:
-{"title_tr": "2-4 kelimelik bölüm adı", "title_en": "...", "cover_tr": "kapak yazısı, 2-4 kelime, merak uyandıran",
+{"title_tr": "2-4 kelimelik bölüm adı", "title_en": "...", "cover_tr": "kapak yazısı: EN FAZLA 3 kelime ve 20 harf, merak uyandıran",
  "cover_en": "...", "cover_bg": "mekân adı", "cover_poses": {"mina": "poz", "efe": "poz"},
  "description_tr": "2-3 cümle, ebeveynler için bölüm özeti ve öğrettiği değer", "description_en": "...",
  "tags_tr": ["10 arama etiketi"], "tags_en": ["10 search tags"],
@@ -109,6 +109,31 @@ def clean(text):
     text = re.sub(r"\([^)]*\)|\*[^*]*\*|\[[^\]]*\]", " ", str(text or ""))
     text = re.sub(r"[^\w\s.,!?;:'\"’…\-çğıöşüÇĞİÖŞÜâîû]", " ", text)
     return re.sub(r"\s+", " ", text).strip()
+
+
+TR_HINT = set("ve bir bu ben sen biz çok ama da de mı mi mu mü ne neden nasıl hadi evet hayır şimdi abla dede için gibi".split())
+EN_HINT = set("the and is are you i my we to a it this that what do let's yes no now sister grandpa with for".split())
+
+
+def lang_score(text):
+    w = re.findall(r"[\wçğıöşüÇĞİÖŞÜ']+", text.lower())
+    tr = sum(x in TR_HINT for x in w) + 2 * len(re.findall("[çğıöşü]", text.lower()))
+    en = sum(x in EN_HINT for x in w)
+    return tr - en
+
+
+def fix_languages(ep):
+    """Gemini sometimes swaps the Turkish and English text of a line; put them back."""
+    n = 0
+    for sc in ep.get("scenes", []):
+        for ln in sc.get("lines", []):
+            t, e = str(ln.get("text") or ""), str(ln.get("en") or "")
+            if t and e and lang_score(t) < 0 < lang_score(e):
+                ln["text"], ln["en"] = e, t
+                n += 1
+    if n:
+        log("fixed swapped languages:", n)
+    return ep
 
 
 def available(lib):
@@ -171,6 +196,14 @@ def normalize(ep, poses, bgs):
     return ep
 
 
+def cover_text(ep, lang):
+    txt = str(ep.get("cover_" + lang) or "").strip()
+    title = str(ep.get("title_" + lang) or "").strip()
+    if not txt or len(txt) > 24 or len(txt.split()) > 4:
+        txt = title if len(title) <= 24 else " ".join(title.split()[:3])
+    return txt
+
+
 def for_lang(ep, lang):
     tr = lang == "tr"
     scenes = []
@@ -180,7 +213,7 @@ def for_lang(ep, lang):
             scenes.append(dict(sc, lines=lines))
     return {"lang": lang, "series": "Mina ile Efe" if tr else "Mina & Efe",
             "title": ep["title_tr"] if tr else ep["title_en"],
-            "cover_text": (ep.get("cover_tr") if tr else ep.get("cover_en")) or (ep["title_tr"] if tr else ep["title_en"]),
+            "cover_text": cover_text(ep, lang),
             "cover_chars": ep["cover_poses"], "cover_bg": ep["cover_bg"],
             "end_big": "Mina ile Efe" if tr else "Mina & Efe",
             "end_small": "Yeni bölümde görüşmek üzere!" if tr else "See you in the next episode!",
@@ -345,7 +378,7 @@ def main():
                   .replace("@POSES@", "\n".join(f"- {c}: {', '.join(p)}" for c, p in poses.items())))
         ep = gemini(prompt, SYSTEM)
         ep["topic"] = topic
-    ep = normalize(ep, poses, bgs)
+    ep = normalize(fix_languages(ep), poses, bgs)
     (out / "bolum.json").write_text(json.dumps(ep, ensure_ascii=False, indent=1), encoding="utf-8")
     rec = {"date": today, "topic": ep.get("topic"), "title_tr": ep.get("title_tr"), "title_en": ep.get("title_en"),
            "scenes": len(ep["scenes"]), "lines": sum(len(s["lines"]) for s in ep["scenes"])}

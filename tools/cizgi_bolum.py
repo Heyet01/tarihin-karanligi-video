@@ -21,7 +21,7 @@ from PIL import Image, ImageDraw, ImageFilter, ImageFont
 ROOT = Path(__file__).resolve().parent.parent
 W, H, FPS, SR = 1280, 720, 24, 24000
 GROUND = 0.94                     # feet line (fraction of frame height)
-SLOTS = {"left": 0.22, "midleft": 0.38, "center": 0.5, "midright": 0.62, "right": 0.78}
+SLOTS = {"left": 0.27, "midleft": 0.42, "center": 0.5, "midright": 0.58, "right": 0.73}
 BODY = {"mina": 0.56, "efe": 0.47, "dede": 0.74}     # head-to-feet height as fraction of frame height
 GAP = 24                          # minimum pixels between two characters
 VOICES = {
@@ -249,7 +249,7 @@ def render(ep, lib, out, offline=False):
     lang = ep.get("lang", "tr")
     work = out / "work"
     work.mkdir(parents=True, exist_ok=True)
-    TITLE, IRIS, PAUSE, END = 4.0, 0.35, 0.45, 5.0
+    TITLE, IRIS, PAUSE, END = 4.0, 0.35, 0.55, 5.0
     sc_list = ep["scenes"]
     tr_in = ["iris" if i == 0 or sc["bg"] != sc_list[i - 1]["bg"] else "cut" for i, sc in enumerate(sc_list)]
     t, idx = TITLE, 0
@@ -366,12 +366,20 @@ def cover(ep, lib, bg, out):
         cv.alpha_composite(spr, (int(W * xs[i % 3] - spr.width / 2), int(H * 1.22 - spr.height)))
     d = ImageDraw.Draw(cv)
     txt = ep.get("cover_text", ep["title"]).upper()
-    size = 112
+    words = txt.split()
+    rows = [txt]
+    if len(words) > 2:   # two balanced lines read better than one long tiny line
+        best = min(range(1, len(words)), key=lambda k: abs(len(" ".join(words[:k])) - len(" ".join(words[k:]))))
+        rows = [" ".join(words[:best]), " ".join(words[best:])]
+    size = 132
     f = font(size)
-    while d.textlength(txt, font=f) > W * 0.92:
+    while max(d.textlength(r, font=f) for r in rows) > W * 0.94 and size > 40:
         size -= 6
         f = font(size)
-    outlined(d, ((W - d.textlength(txt, font=f)) / 2, 22), txt, f, (255, 214, 64), 11)
+    y = 14
+    for r in rows:
+        outlined(d, ((W - d.textlength(r, font=f)) / 2, y), r, f, (255, 214, 64), 11)
+        y += int(size * 1.02)
     f2 = font(46)
     lab = ep["series"]
     d.rounded_rectangle([24, H - 88, 56 + d.textlength(lab, font=f2), H - 22], radius=22, fill=(255, 90, 120, 240))

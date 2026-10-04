@@ -290,7 +290,7 @@ def publish(lang, ep, out):
     me = api(tok, "channels?part=snippet&mine=true").get("items", [{}])
     name = (me[0].get("snippet", {}).get("title", "") if me else "")
     log(lang, "channel:", name)
-    if ch["expect"] not in name.lower().replace(" ", ""):
+    if ch["expect"] not in name.replace("İ", "i").lower().replace("\u0307", "").replace(" ", ""):
         raise RuntimeError(f"token belongs to the wrong channel: {name}")
     title = f"{ep['title_' + lang]} {ch['suffix']}"[:100]
     desc = (str(ep.get("description_" + lang, "")) + ch["foot"]).replace("<", "").replace(">", "")[:4900]

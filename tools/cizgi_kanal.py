@@ -122,7 +122,7 @@ def apply(out):
     name = ch["snippet"]["title"]
     res = {"channel": name, "id": ch["id"]}
     print("channel:", name, ch["id"], flush=True)
-    if "minaileefe" not in name.lower().replace(" ", ""):
+    if "minaileefe" not in name.replace("İ", "i").lower().replace("\u0307", "").replace(" ", ""):
         raise SystemExit("wrong channel: " + name)
     try:
         b = api(tok, "https://www.googleapis.com/upload/youtube/v3/channelBanners/insert?uploadType=media",

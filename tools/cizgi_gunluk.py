@@ -261,7 +261,7 @@ def playlist(tok, name, about, lang, vid):
 
 
 CHANNELS = {
-    "tr": {"token": "MINA_REFRESH_TOKEN", "hour_utc": 14,
+    "tr": {"token": "MINA_REFRESH_TOKEN", "hour_utc": 14, "expect": "minaileefe",
            "playlist": ("Mina ile Efe - Tüm Bölümler", "Mina ile Efe çizgi dizisinin bütün bölümleri. Okul öncesi çocuklar için eğitici, neşeli hikâyeler."),
            "suffix": "| Mina ile Efe | Çocuklar İçin Eğitici Çizgi Film",
            "foot": "\n\nMina ile Efe, 3-7 yaş arası çocuklar için her gün yeni bölümle yayınlanan eğitici bir çizgi dizidir. "
@@ -269,7 +269,7 @@ CHANNELS = {
                    "Yeni bölümleri kaçırmamak için kanala abone olun!\n\n#minaileefe #çizgifilm #çocukçizgifilm #eğiticiçizgifilm #masal",
            "base_tags": ["Mina ile Efe", "çizgi film", "çocuk çizgi filmi", "eğitici çizgi film", "türkçe çizgi film",
                          "okul öncesi", "çocuklar için", "masal"]},
-    "en": {"token": "BOOMBOO_REFRESH_TOKEN", "hour_utc": 20,
+    "en": {"token": "BOOMBOO_REFRESH_TOKEN", "hour_utc": 20, "expect": "boomboo",
            "playlist": ("Mina & Efe - Full Episodes", "All episodes of Mina & Efe, a gentle cartoon series for preschoolers about kindness, sharing and discovering the world."),
            "suffix": "| Mina & Efe | Cartoons for Kids",
            "foot": "\n\nMina & Efe is a gentle animated series for kids aged 3-7. Join Mina, her little brother Efe and "
@@ -287,6 +287,11 @@ def publish(lang, ep, out):
         log("no token for", lang, "- skipping upload")
         return None
     tok = access_token(refresh)
+    me = api(tok, "channels?part=snippet&mine=true").get("items", [{}])
+    name = (me[0].get("snippet", {}).get("title", "") if me else "")
+    log(lang, "channel:", name)
+    if ch["expect"] not in name.lower().replace(" ", ""):
+        raise RuntimeError(f"token belongs to the wrong channel: {name}")
     title = f"{ep['title_' + lang]} {ch['suffix']}"[:100]
     desc = (str(ep.get("description_" + lang, "")) + ch["foot"]).replace("<", "").replace(">", "")[:4900]
     tags = [str(t)[:40] for t in (ep.get("tags_" + lang) or [])][:12] + ch["base_tags"]

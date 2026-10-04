@@ -2,18 +2,29 @@ name: Cizgi dizi karakter kutuphanesi
 
 on:
   workflow_dispatch: {}
+  schedule:
+    - cron: "17 */3 * * *"
 
 permissions:
   contents: write
 
+concurrency:
+  group: cizgi-lib
+  cancel-in-progress: false
+
 jobs:
   lib:
     runs-on: ubuntu-latest
-    timeout-minutes: 60
+    timeout-minutes: 40
     steps:
       - uses: actions/checkout@v4
       - name: Kurulum
-        run: pip install -q numpy pillow "rembg[cpu]" || pip install -q numpy pillow rembg onnxruntime
+        run: |
+          pip install -q numpy pillow "rembg[cpu]" || pip install -q numpy pillow rembg onnxruntime
+          git fetch -q origin state
+          mkdir -p /tmp/lib
+          git archive origin/state cizgi/lib | tar -x -C /tmp/lib --strip-components=2 || true
+          ls /tmp/lib/raw /tmp/lib/png || true
       - name: Pozlar ve arka planlar
         env:
           POLLINATIONS_TOKEN: ${{ secrets.POLLINATIONS_TOKEN }}
@@ -23,7 +34,8 @@ jobs:
         run: |
           git config user.name "tarihin-karanligi-bot"
           git config user.email "tarihin-karanligi-bot@users.noreply.github.com"
-          git fetch -q origin state
           git checkout -q -f -B state origin/state
-          rm -rf cizgi/lib && mkdir -p cizgi/lib && cp -r /tmp/lib/* cizgi/lib/
-          git add cizgi && git commit -q -m "Cizgi dizi kutuphanesi" && git push -q origin state
+          mkdir -p cizgi/lib && cp -r /tmp/lib/* cizgi/lib/
+          git add cizgi
+          git commit -q -m "Cizgi dizi kutuphanesi" || exit 0
+          for i in 1 2 3; do git push -q origin state && break; git pull -q --rebase origin state; done

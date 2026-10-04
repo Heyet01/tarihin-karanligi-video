@@ -1,0 +1,321 @@
+{
+ "lang": "tr",
+ "series": "Mina ile Efe",
+ "title": "Renkli Laleler",
+ "cover_text": "Kaç Renk Var?",
+ "cover_chars": {
+  "mina": "point",
+  "efe": "happy"
+ },
+ "cover_bg": "park_path",
+ "end_big": "Mina ile Efe",
+ "end_small": "Yeni bölümde görüşmek üzere!",
+ "scenes": [
+  {
+   "bg": "park_wide",
+   "cam": [
+    1.0,
+    1.04,
+    0.0
+   ],
+   "chars": {
+    "mina": "left",
+    "efe": "midleft"
+   },
+   "start_pose": {
+    "mina": "wave",
+    "efe": "wave"
+   },
+   "lines": [
+    {
+     "who": "anlatici",
+     "text": "Güneşli bir bahar sabahı, Mina ile kardeşi Efe parka geldi."
+    },
+    {
+     "who": "mina",
+     "text": "Merhaba arkadaşlar! Ben Mina. Bu da kardeşim Efe!",
+     "pose": {
+      "mina": "wave"
+     }
+    },
+    {
+     "who": "efe",
+     "text": "Merhaba! Bugün parkta çok eğleneceğiz!",
+     "pose": {
+      "efe": "wave",
+      "mina": "happy"
+     }
+    }
+   ]
+  },
+  {
+   "bg": "park_path",
+   "cam": [
+    1.0,
+    1.05,
+    -0.02
+   ],
+   "chars": {
+    "mina": "midright",
+    "efe": "right"
+   },
+   "start_pose": {
+    "mina": "point",
+    "efe": "happy"
+   },
+   "lines": [
+    {
+     "who": "mina",
+     "text": "Bak Efe! Yolun iki yanı rengârenk lalelerle dolu!",
+     "pose": {
+      "mina": "point"
+     }
+    },
+    {
+     "who": "efe",
+     "text": "Çok güzeller! Hadi renklerini sayalım abla!",
+     "pose": {
+      "efe": "laugh"
+     }
+    },
+    {
+     "who": "mina",
+     "text": "Şu laleler sarı. Tıpkı benim elbisem gibi!",
+     "pose": {
+      "mina": "talk"
+     }
+    },
+    {
+     "who": "efe",
+     "text": "Şunlar da kırmızı! Senin ayakkabıların gibi!",
+     "pose": {
+      "efe": "point"
+     }
+    },
+    {
+     "who": "mina",
+     "text": "Evet! Sarı ve kırmızı. İki renk bulduk bile!",
+     "pose": {
+      "mina": "happy"
+     }
+    }
+   ]
+  },
+  {
+   "bg": "park_path",
+   "cam": [
+    1.04,
+    1.0,
+    0.02
+   ],
+   "chars": {
+    "mina": "left",
+    "efe": "midleft",
+    "dede": "right"
+   },
+   "start_pose": {
+    "mina": "happy",
+    "efe": "happy",
+    "dede": "happy"
+   },
+   "lines": [
+    {
+     "who": "anlatici",
+     "text": "O sırada parkın bahçıvanı Hasan Dede yanlarına geldi."
+    },
+    {
+     "who": "dede",
+     "text": "Günaydın çocuklar! Lalelerimi beğendiniz mi?",
+     "pose": {
+      "dede": "wave"
+     }
+    },
+    {
+     "who": "mina",
+     "text": "Günaydın Hasan Dede! Çok beğendik, hepsi rengârenk!",
+     "pose": {
+      "mina": "wave"
+     }
+    },
+    {
+     "who": "efe",
+     "text": "Hasan Dede, laleler nasıl bu kadar büyüdü?",
+     "pose": {
+      "efe": "think",
+      "mina": "happy"
+     }
+    },
+    {
+     "who": "dede",
+     "text": "Onlara her sabah su veriyorum. Güneş de onları ısıtıyor.",
+     "pose": {
+      "dede": "talk"
+     }
+    },
+    {
+     "who": "dede",
+     "text": "Çiçekler de tıpkı sizin gibi; suya, güneşe ve sevgiye ihtiyaç duyar.",
+     "pose": {
+      "dede": "happy"
+     }
+    }
+   ]
+  },
+  {
+   "bg": "park_wide",
+   "cam": [
+    1.0,
+    1.05,
+    0.02
+   ],
+   "chars": {
+    "mina": "left",
+    "efe": "midleft",
+    "dede": "right"
+   },
+   "start_pose": {
+    "mina": "happy",
+    "efe": "happy",
+    "dede": "point"
+   },
+   "lines": [
+    {
+     "who": "dede",
+     "text": "İsterseniz yarın sabah bana yardım edin. Birlikte çiçek sulayalım.",
+     "pose": {
+      "dede": "point"
+     }
+    },
+    {
+     "who": "mina",
+     "text": "Yaşasın! Ben sulama kabını taşırım!",
+     "pose": {
+      "mina": "point"
+     }
+    },
+    {
+     "who": "efe",
+     "text": "Ben de çiçeklere yavaşça su dökerim!",
+     "pose": {
+      "efe": "laugh"
+     }
+    },
+    {
+     "who": "dede",
+     "text": "Aferin size! Ama unutmayın, çiçekleri asla koparmıyoruz.",
+     "pose": {
+      "dede": "happy"
+     }
+    },
+    {
+     "who": "mina",
+     "text": "Tamam Hasan Dede. Koparırsak solarlar, değil mi?",
+     "pose": {
+      "mina": "talk"
+     }
+    },
+    {
+     "who": "dede",
+     "text": "Aynen öyle yavrum. Burada kalırlarsa herkes onları görüp sevinir.",
+     "pose": {
+      "dede": "talk"
+     }
+    }
+   ]
+  },
+  {
+   "bg": "park_tree",
+   "cam": [
+    1.0,
+    1.04,
+    0.0
+   ],
+   "chars": {
+    "mina": "midleft",
+    "efe": "midright"
+   },
+   "start_pose": {
+    "mina": "happy",
+    "efe": "happy"
+   },
+   "lines": [
+    {
+     "who": "anlatici",
+     "text": "Sonra Mina ile Efe, kocaman çınar ağacının gölgesinde dinlendiler."
+    },
+    {
+     "who": "mina",
+     "text": "Efe, bugün kaç renk gördük? Hadi beraber sayalım.",
+     "pose": {
+      "mina": "talk"
+     }
+    },
+    {
+     "who": "efe",
+     "text": "Sarı laleler... kırmızı laleler...",
+     "pose": {
+      "efe": "think"
+     }
+    },
+    {
+     "who": "efe",
+     "text": "Yeşil çimenler... bir de mavi gökyüzü!",
+     "pose": {
+      "efe": "point"
+     }
+    },
+    {
+     "who": "mina",
+     "text": "Bir, iki, üç, dört! Tam dört renk! Aferin sana Efe!",
+     "pose": {
+      "mina": "wave"
+     }
+    },
+    {
+     "who": "efe",
+     "text": "Yaşasın! Ben renkleri çok seviyorum!",
+     "pose": {
+      "efe": "laugh"
+     }
+    }
+   ]
+  },
+  {
+   "bg": "park_wide",
+   "cam": [
+    1.04,
+    1.0,
+    0.0
+   ],
+   "chars": {
+    "mina": "left",
+    "efe": "right"
+   },
+   "start_pose": {
+    "mina": "happy",
+    "efe": "happy"
+   },
+   "lines": [
+    {
+     "who": "anlatici",
+     "text": "Ve o gün Mina ile Efe, doğadaki renkleri tanımayı ve çiçekleri korumayı öğrendi."
+    },
+    {
+     "who": "mina",
+     "text": "Siz de bugün etrafınızda kaç renk görüyorsunuz? Hadi sayın bakalım!",
+     "pose": {
+      "mina": "point"
+     }
+    },
+    {
+     "who": "efe",
+     "text": "Hoşça kalın arkadaşlar! Yarın görüşürüz!",
+     "pose": {
+      "efe": "wave",
+      "mina": "wave"
+     }
+    }
+   ]
+  }
+ ]
+}

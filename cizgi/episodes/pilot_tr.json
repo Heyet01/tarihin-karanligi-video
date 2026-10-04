@@ -1,0 +1,392 @@
+{
+ "lang": "tr",
+ "series": "Mina ile Efe",
+ "title": "Kayıp Uçurtma",
+ "cover_text": "Uçurtma Ağaçta Kaldı!",
+ "cover_chars": {
+  "mina": "surprised",
+  "efe": "kite"
+ },
+ "cover_bg": "park_tree",
+ "end_big": "Mina ile Efe",
+ "end_small": "Yeni bölümde görüşmek üzere!",
+ "scenes": [
+  {
+   "bg": "park_wide",
+   "cam": [
+    1.0,
+    1.04,
+    0.0
+   ],
+   "chars": {
+    "mina": "left",
+    "efe": "right"
+   },
+   "start_pose": {
+    "mina": "wave",
+    "efe": "kite"
+   },
+   "lines": [
+    {
+     "who": "anlatici",
+     "text": "Güneşli bir sabah, Mina ile kardeşi Efe parka geldi."
+    },
+    {
+     "who": "mina",
+     "text": "Merhaba arkadaşlar! Ben Mina. Bu da kardeşim Efe!",
+     "pose": {
+      "mina": "wave"
+     }
+    },
+    {
+     "who": "efe",
+     "text": "Bugün yeni uçurtmamı uçuracağım! Bakın, kırmızı!",
+     "pose": {
+      "efe": "kite",
+      "mina": "happy"
+     }
+    }
+   ]
+  },
+  {
+   "bg": "park_wide",
+   "cam": [
+    1.04,
+    1.08,
+    0.02
+   ],
+   "chars": {
+    "mina": "left",
+    "efe": "right"
+   },
+   "start_pose": {
+    "mina": "happy",
+    "efe": "point"
+   },
+   "lines": [
+    {
+     "who": "anlatici",
+     "text": "Efe koştu, koştu... ve uçurtma gökyüzüne yükseldi."
+    },
+    {
+     "who": "efe",
+     "text": "Abla bak! Uçurtmam çok yükseklere çıktı!",
+     "pose": {
+      "efe": "point"
+     }
+    },
+    {
+     "who": "mina",
+     "text": "Vay canına! Kuş gibi uçuyor!",
+     "pose": {
+      "mina": "laugh"
+     }
+    }
+   ]
+  },
+  {
+   "bg": "park_path",
+   "cam": [
+    1.0,
+    1.05,
+    -0.02
+   ],
+   "chars": {
+    "mina": "left",
+    "efe": "right"
+   },
+   "start_pose": {
+    "mina": "happy",
+    "efe": "point"
+   },
+   "lines": [
+    {
+     "who": "anlatici",
+     "text": "Ama birden sert bir rüzgâr esti. Vuuuuş!"
+    },
+    {
+     "who": "efe",
+     "text": "Eyvah! İp elimden kaçtı! Uçurtmam gidiyor!",
+     "pose": {
+      "efe": "surprised",
+      "mina": "surprised"
+     }
+    },
+    {
+     "who": "mina",
+     "text": "Çabuk Efe, peşinden koşalım!",
+     "pose": {
+      "mina": "point"
+     }
+    }
+   ]
+  },
+  {
+   "bg": "park_tree",
+   "cam": [
+    1.0,
+    1.06,
+    0.0
+   ],
+   "chars": {
+    "mina": "left",
+    "efe": "midleft"
+   },
+   "start_pose": {
+    "mina": "point",
+    "efe": "sad"
+   },
+   "lines": [
+    {
+     "who": "mina",
+     "text": "Bak orada! Uçurtma şu kocaman ağaca takıldı.",
+     "pose": {
+      "mina": "point"
+     }
+    },
+    {
+     "who": "efe",
+     "text": "Ama çok yüksek... Ben oraya uzanamam.",
+     "pose": {
+      "efe": "sad"
+     }
+    },
+    {
+     "who": "anlatici",
+     "text": "Efe'nin gözleri doldu. Uçurtmasını çok seviyordu."
+    }
+   ]
+  },
+  {
+   "bg": "park_tree",
+   "cam": [
+    1.06,
+    1.02,
+    0.0
+   ],
+   "chars": {
+    "mina": "left",
+    "efe": "midleft"
+   },
+   "start_pose": {
+    "mina": "think",
+    "efe": "sad"
+   },
+   "lines": [
+    {
+     "who": "mina",
+     "text": "Hmm... Ağaca tırmanmak tehlikeli olur.",
+     "pose": {
+      "mina": "think"
+     }
+    },
+    {
+     "who": "mina",
+     "text": "Buldum! Bir büyükten yardım isteyelim!",
+     "pose": {
+      "mina": "point"
+     }
+    },
+    {
+     "who": "efe",
+     "text": "Kimden abla?",
+     "pose": {
+      "efe": "think"
+     }
+    },
+    {
+     "who": "mina",
+     "text": "Parkın bahçıvanı Hasan Dede'den!",
+     "pose": {
+      "mina": "laugh"
+     }
+    }
+   ]
+  },
+  {
+   "bg": "park_path",
+   "cam": [
+    1.0,
+    1.04,
+    0.02
+   ],
+   "chars": {
+    "mina": "left",
+    "efe": "midleft",
+    "dede": "right"
+   },
+   "start_pose": {
+    "mina": "wave",
+    "efe": "happy",
+    "dede": "happy"
+   },
+   "lines": [
+    {
+     "who": "mina",
+     "text": "Hasan Dede! Hasan Dede! Bize yardım eder misin?",
+     "pose": {
+      "mina": "wave"
+     }
+    },
+    {
+     "who": "dede",
+     "text": "Tabii yavrum. Ne oldu bakalım?",
+     "pose": {
+      "dede": "talk"
+     }
+    },
+    {
+     "who": "efe",
+     "text": "Uçurtmam ağaca takıldı. Çok yüksekte!",
+     "pose": {
+      "efe": "sad"
+     }
+    },
+    {
+     "who": "dede",
+     "text": "Merak etmeyin çocuklar. Uzun merdivenimi getiriyorum!",
+     "pose": {
+      "dede": "point"
+     }
+    }
+   ]
+  },
+  {
+   "bg": "park_tree",
+   "cam": [
+    1.0,
+    1.05,
+    0.0
+   ],
+   "chars": {
+    "mina": "left",
+    "efe": "midleft",
+    "dede": "right"
+   },
+   "start_pose": {
+    "mina": "happy",
+    "efe": "happy",
+    "dede": "ladder"
+   },
+   "lines": [
+    {
+     "who": "anlatici",
+     "text": "Hasan Dede merdiveni ağaca dayadı ve yavaş yavaş tırmandı."
+    },
+    {
+     "who": "mina",
+     "text": "Dikkatli ol Hasan Dede!",
+     "pose": {
+      "mina": "surprised"
+     }
+    },
+    {
+     "who": "dede",
+     "text": "Merak etme Mina. Merdivende hep yavaş ve dikkatli olurum.",
+     "pose": {
+      "dede": "laugh"
+     }
+    }
+   ]
+  },
+  {
+   "bg": "park_wide",
+   "cam": [
+    1.02,
+    1.06,
+    0.0
+   ],
+   "chars": {
+    "mina": "left",
+    "efe": "midleft",
+    "dede": "right"
+   },
+   "start_pose": {
+    "mina": "happy",
+    "efe": "surprised",
+    "dede": "give"
+   },
+   "lines": [
+    {
+     "who": "dede",
+     "text": "İşte uçurtman Efe! Hiçbir yeri yırtılmamış.",
+     "pose": {
+      "dede": "give"
+     }
+    },
+    {
+     "who": "efe",
+     "text": "Yaşasın! Teşekkür ederim Hasan Dede!",
+     "pose": {
+      "efe": "laugh"
+     }
+    },
+    {
+     "who": "mina",
+     "text": "Çok teşekkürler Hasan Dede, sen bir kahramansın!",
+     "pose": {
+      "mina": "laugh"
+     }
+    },
+    {
+     "who": "dede",
+     "text": "Rica ederim çocuklar. Yardımlaşmak çok güzeldir!",
+     "pose": {
+      "dede": "happy"
+     }
+    }
+   ]
+  },
+  {
+   "bg": "park_sunset",
+   "cam": [
+    1.0,
+    1.05,
+    0.0
+   ],
+   "chars": {
+    "mina": "left",
+    "efe": "right"
+   },
+   "start_pose": {
+    "mina": "happy",
+    "efe": "kite"
+   },
+   "lines": [
+    {
+     "who": "mina",
+     "text": "Bu sefer ipi birlikte, sıkıca tutalım Efe.",
+     "pose": {
+      "mina": "talk"
+     }
+    },
+    {
+     "who": "efe",
+     "text": "Tamam abla! Birlikte daha eğlenceli!",
+     "pose": {
+      "efe": "kite"
+     }
+    },
+    {
+     "who": "anlatici",
+     "text": "Ve o gün Mina ile Efe, yardım istemenin ve yardımlaşmanın ne kadar güzel olduğunu öğrendi."
+    },
+    {
+     "who": "mina",
+     "text": "Siz de bir sorun olunca büyüklerinizden yardım isteyin, tamam mı?",
+     "pose": {
+      "mina": "wave"
+     }
+    },
+    {
+     "who": "efe",
+     "text": "Hoşça kalın arkadaşlar!",
+     "pose": {
+      "efe": "wave",
+      "mina": "wave"
+     }
+    }
+   ]
+  }
+ ]
+}

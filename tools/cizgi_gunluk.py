@@ -362,7 +362,7 @@ def main():
     langs = [x for x in (os.environ.get("CIZGI_LANGS") or "tr,en").split(",") if x in ("tr", "en")]
     history = json.loads(hist_p.read_text()) if hist_p.exists() else []
     today = datetime.now(timezone(timedelta(hours=3))).strftime("%Y-%m-%d")
-    if not dry and any(h.get("date") == today and h.get("tr_id") for h in history):
+    if not dry and any(h.get("date") == today and (h.get("tr_id") or h.get("en_id")) for h in history):
         log("today's episode already published")
         return
     poses, bgs = available(lib)

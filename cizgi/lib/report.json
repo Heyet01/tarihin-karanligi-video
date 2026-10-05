@@ -86,6 +86,16 @@
     "https://enter.pollinations.ai/api/account/balance": "{\"balance\":0,\"accountBalance\":{\"total\":0,\"tier\":0,\"paid\":0}}"
    },
    "end": "18:54 UTC"
+  },
+  {
+   "start": "2026-10-04 23:59 UTC",
+   "made": [],
+   "budget_hit": "reserve (0.0) 23:59 UTC",
+   "balance": {
+    "https://gen.pollinations.ai/account/balance": "{\"balance\":0,\"accountBalance\":{\"total\":0,\"tier\":0,\"paid\":0}}",
+    "https://enter.pollinations.ai/api/account/balance": "{\"balance\":0,\"accountBalance\":{\"total\":0,\"tier\":0,\"paid\":0}}"
+   },
+   "end": "00:00 UTC"
   }
  ],
  "missing": [

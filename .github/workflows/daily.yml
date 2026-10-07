@@ -2,9 +2,12 @@ name: Gunluk Video
 
 on:
   schedule:
-    - cron: "35 15 * * *"   # 18:35 Turkiye saati; video ~19:00 civari yayinda
-    - cron: "10 17 * * *"   # yedek: 20:10 (GitHub zamanlayicisi gecikir/atlarsa)
-    - cron: "40 18 * * *"   # yedek: 21:40
+    - cron: "25 8 * * *"    # ogle videosu ~11:25 Turkiye
+    - cron: "55 9 * * *"    # ogle yedek
+    - cron: "40 10 * * *"   # ogle yedek 2
+    - cron: "5 14 * * *"    # aksam videosu ~17:05 Turkiye
+    - cron: "35 15 * * *"   # aksam yedek
+    - cron: "10 17 * * *"   # aksam yedek 2
   workflow_dispatch: {}
 
 permissions:
@@ -26,9 +29,10 @@ jobs:
       - name: Bugun zaten paylasildi mi?
         id: guard
         run: |
-          TODAY=$(date -u +%Y-%m-%d)
-          if [ "${{ github.event_name }}" = "schedule" ] && curl -s -m 20 "https://heyet01.github.io/tarihin-karanligi-video/" | grep -q "$TODAY-"; then
-            echo "Bugunun videosu zaten yayinda, atlaniyor."
+          LAST=$(curl -s -m 20 "https://heyet01.github.io/tarihin-karanligi-video/state.json" | python3 -c "import json,sys,datetime as d; u=json.load(sys.stdin)['updated']; print(int((d.datetime.utcnow()+d.timedelta(hours=3)-d.datetime.fromisoformat(u)).total_seconds()//60))" 2>/dev/null || echo 9999)
+          echo "son video $LAST dakika once"
+          if [ "${{ github.event_name }}" = "schedule" ] && [ "$LAST" -lt 240 ]; then
+            echo "Bu saatin videosu zaten yayinda, atlaniyor."
             echo "skip=true" >> "$GITHUB_OUTPUT"
           else
             echo "skip=false" >> "$GITHUB_OUTPUT"

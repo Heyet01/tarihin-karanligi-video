@@ -2,12 +2,8 @@ name: Gunluk Video
 
 on:
   schedule:
-    - cron: "25 8 * * *"    # ogle videosu ~11:25 Turkiye
-    - cron: "55 9 * * *"    # ogle yedek
-    - cron: "40 10 * * *"   # ogle yedek 2
-    - cron: "5 14 * * *"    # aksam videosu ~17:05 Turkiye
-    - cron: "35 15 * * *"   # aksam yedek
-    - cron: "10 17 * * *"   # aksam yedek 2
+    - cron: "7,37 8-11 * * *"    # ogle videosu: 11:07-14:37 Turkiye arasi her yarim saatte dener (GitHub bazen atlar)
+    - cron: "7,37 14-17 * * *"   # aksam videosu: 17:07-20:37 Turkiye arasi her yarim saatte dener
   workflow_dispatch: {}
 
 permissions:

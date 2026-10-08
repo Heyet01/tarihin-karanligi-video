@@ -1,0 +1,90 @@
+name: Zamanlayici
+
+# GitHub'in kendi saat ayari (cron) cok gecikiyor / atlaniyor.
+# Bu is kendi kendini zincirleme baslatir: siradaki video saatine kadar bekler,
+# saat gelince Gunluk Video'yu baslatir, sonra kendini yeniden baslatir.
+on:
+  workflow_dispatch: {}
+  schedule:
+    - cron: "17 */6 * * *"   # zincir koparsa yeniden kurar
+
+permissions:
+  actions: write
+  contents: read
+
+concurrency:
+  group: zamanlayici
+  cancel-in-progress: true
+
+jobs:
+  bekle:
+    runs-on: ubuntu-latest
+    timeout-minutes: 350
+    steps:
+      - name: Siradaki video saatini bekle ve baslat
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+        run: |
+          python3 - <<'PY'
+          import datetime as d, json, os, time, urllib.request
+          SLOTS = [(12, 0), (19, 0)]          # Turkiye saati
+          LATE = 45                           # bu kadar dakika gec kalinsa da yine baslat
+          MAXW = 5 * 3600 + 20 * 60           # tek seferde en fazla bekleme
+          TR = d.timezone(d.timedelta(hours=3))
+          API = "https://api.github.com/repos/" + os.environ["REPO"]
+          H = {"Authorization": "Bearer " + os.environ["GH_TOKEN"], "Accept": "application/vnd.github+json"}
+
+          def call(path, body=None):
+              req = urllib.request.Request(API + path, data=json.dumps(body).encode() if body is not None else None,
+                                           method="POST" if body is not None else "GET", headers=H)
+              with urllib.request.urlopen(req, timeout=30) as r:
+                  t = r.read()
+                  return json.loads(t) if t else {}
+
+          def target(now):
+              c = []
+              for add in (0, 1):
+                  day = (now + d.timedelta(days=add)).date()
+                  for h, m in SLOTS:
+                      c.append(d.datetime(day.year, day.month, day.day, h, m, tzinfo=TR))
+              return min(t for t in c if t > now - d.timedelta(minutes=LATE))
+
+          def recent_video():
+              # yeni video zaten uretiliyor ya da son 4 saatte uretildi mi?
+              runs = call("/actions/workflows/daily.yml/runs?per_page=10")["workflow_runs"]
+              now = d.datetime.now(d.timezone.utc)
+              for r in runs:
+                  age = (now - d.datetime.fromisoformat(r["created_at"].replace("Z", "+00:00"))).total_seconds() / 60
+                  if r["status"] != "completed" and age < 120:
+                      return "su an calisan video var"
+                  if r["event"] == "workflow_dispatch" and age < 120:
+                      return "son 2 saatte baslatilmis video var"
+              try:
+                  u = json.load(urllib.request.urlopen("https://heyet01.github.io/tarihin-karanligi-video/state.json", timeout=20))["updated"]
+                  last = d.datetime.fromisoformat(u).replace(tzinfo=TR)
+                  if (d.datetime.now(TR) - last).total_seconds() / 60 < 240:
+                      return "son video 4 saatten yeni"
+              except Exception as e:
+                  print("state okunamadi:", e)
+              return None
+
+          now = d.datetime.now(TR)
+          t = target(now)
+          wait = (t - now).total_seconds()
+          print("simdi", now.strftime("%d.%m %H:%M"), "| siradaki video", t.strftime("%d.%m %H:%M"), "| bekleme dk", int(max(wait, 0) // 60), flush=True)
+          if wait > MAXW:
+              time.sleep(MAXW)
+          else:
+              if wait > 0:
+                  time.sleep(wait)
+              why = recent_video()
+              if why:
+                  print("Video baslatilmadi:", why)
+              else:
+                  call("/actions/workflows/daily.yml/dispatches", {"ref": "main"})
+                  print("Gunluk Video baslatildi", flush=True)
+              time.sleep((LATE + 5) * 60)     # ayni saat icin tekrar baslatmamak icin
+          call("/actions/workflows/zamanlayici.yml/dispatches", {"ref": "main"})
+          print("zincir devam ediyor")
+          PY

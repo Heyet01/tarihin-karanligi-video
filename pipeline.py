@@ -128,7 +128,7 @@ def brief_for(pl, state):
             "sonra yeni detaylar, twist ve sonuç gelsin; son sahne A mı, B mi sorusu olsun.")
     else:
         lines.append(
-            "BÖLÜM KURALI: Bu tek parça video. TAM 7 sahne, toplam 45-60 kelime. title'da 'Bölüm' yazma. "
+            "BÖLÜM KURALI: Bu tek parça video. TAM 6 sahne, toplam 34-42 kelime, 44 kelimeyi asla geçme. title'da 'Bölüm' yazma. "
             "Son sahne A mı, B mi sorusu olsun.")
     return "\n\n".join(lines)
 
@@ -146,7 +146,7 @@ def fix_title(title, part):
 def problems(job, pl):
     errs = []
     scenes = job.get("scenes") or []
-    want = 5 if pl["part"] == 1 else 7
+    want = {1: 5, 2: 7}.get(pl["part"], 6)
     if abs(len(scenes) - want) > 1:
         errs.append(f"{len(scenes)} sahne (beklenen {want})")
     text = " ".join(str(s.get("text", "")) for s in scenes) + " " + str(job.get("title", ""))
@@ -221,7 +221,7 @@ def get_job():
             job = request_script(url, body, brief)
             if isinstance(job.get("scenes"), list) and len(job["scenes"]) >= 3:
                 n_words = sum(len(str(s.get("text", "")).split()) for s in job["scenes"])
-                limit = 40 if len(job["scenes"]) <= 5 else 72   # 5 scenes ~18-20 s, longer videos up to ~40 s
+                limit = {1: 40, 2: 72}.get(pl["part"], 48)   # single videos ~22-27 s: short videos get watched to the end
                 errs = problems(job, pl)
                 if n_words > limit:
                     errs.append(f"{n_words} kelime")
@@ -359,7 +359,7 @@ def main():
     (site / "index.html").write_text(
         f'<!doctype html><meta charset="utf-8"><title>Tarihin Karanlığı</title>'
         f'<p>Son video: <a href="{folder}/video_ig.mp4">{folder}</a></p>', encoding="utf-8")
-    (OUT / "notify.json").write_text(json.dumps(meta, ensure_ascii=False), encoding="utf-8")
+    (OUT / "notify.json").write_text(json.dumps(meta, encoding="utf-8")) if False else (OUT / "notify.json").write_text(json.dumps(meta, ensure_ascii=False), encoding="utf-8")
     log("done", base)
 
 

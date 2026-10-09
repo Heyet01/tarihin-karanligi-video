@@ -28,7 +28,11 @@ jobs:
         run: |
           LAST=$(curl -s -m 20 "https://heyet01.github.io/tarihin-karanligi-video/state.json" | python3 -c "import json,sys,datetime as d; u=json.load(sys.stdin)['updated']; print(int((d.datetime.utcnow()+d.timedelta(hours=3)-d.datetime.fromisoformat(u)).total_seconds()//60))" 2>/dev/null || echo 9999)
           echo "son video $LAST dakika once"
-          if [ "${{ github.event_name }}" = "schedule" ] && [ "$LAST" -lt 240 ]; then
+          HOUR=$(TZ=Europe/Istanbul date +%H)
+          if [ "${{ github.event_name }}" = "schedule" ] && ! echo " 12 13 14 19 20 21 " | grep -q " $HOUR "; then
+            echo "Yedek saat cok gecikti ($HOUR), gece video atilmaz."
+            echo "skip=true" >> "$GITHUB_OUTPUT"
+          elif [ "${{ github.event_name }}" = "schedule" ] && [ "$LAST" -lt 240 ]; then
             echo "Bu saatin videosu zaten yayinda, atlaniyor."
             echo "skip=true" >> "$GITHUB_OUTPUT"
           else

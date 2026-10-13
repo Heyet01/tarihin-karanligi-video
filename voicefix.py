@@ -10,10 +10,11 @@ import time
 import urllib.request
 from pathlib import Path
 
-VOICES = [os.environ.get("PIPER_VOICE") or "tr/tr_TR/fahrettin/medium/tr_TR-fahrettin-medium",
-          "tr/tr_TR/dfki/medium/tr_TR-dfki-medium"]
+VOICES = [os.environ.get("PIPER_VOICE") or "tr/tr_TR/dfki/medium/tr_TR-dfki-medium",
+          "tr/tr_TR/fahrettin/medium/tr_TR-fahrettin-medium"]
 BASE = "https://huggingface.co/rhasspy/piper-voices/resolve/main/"
-STATE = {"edge_dead": False, "model": None}
+# Piper is now the main voice (the user prefers it); set USE_EDGE=1 to try edge-tts first.
+STATE = {"edge_dead": os.environ.get("USE_EDGE") != "1", "model": None}
 
 
 def install(r):

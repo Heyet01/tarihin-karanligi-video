@@ -1,4 +1,4 @@
-name: Ornek video (yeni gorunum)
+name: Ornek Video (paylasmaz)
 
 on:
   workflow_dispatch: {}
@@ -7,31 +7,45 @@ permissions:
   contents: write
 
 jobs:
-  sample:
+  video:
     runs-on: ubuntu-latest
-    timeout-minutes: 40
+    timeout-minutes: 45
     steps:
       - uses: actions/checkout@v4
+
       - name: Kurulum
         run: |
-          command -v ffmpeg || (sudo apt-get update -qq && sudo apt-get install -y -qq ffmpeg)
-          pip install -q numpy pillow edge-tts fonttools
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq ffmpeg
+          pip install -q numpy pillow edge-tts fonttools piper-tts
           mkdir -p assets
           F="ofl/oswald/Oswald%5Bwght%5D.ttf"
           curl -fsSL --retry 5 --retry-delay 6 -o /tmp/Oswald.ttf "https://github.com/google/fonts/raw/main/$F" || curl -fsSL --retry 5 --retry-delay 6 -o /tmp/Oswald.ttf "https://cdn.jsdelivr.net/gh/google/fonts@main/$F"
           fonttools varLib.instancer /tmp/Oswald.ttf wght=700 -q -o assets/Oswald-Bold.ttf
-      - name: Ornek video
+
+      - name: Ornek video uret (yayinlamaz)
         env:
+          MAKE_WEBHOOK_URL: ${{ secrets.MAKE_WEBHOOK_URL }}
+          MAKE_TOKEN: ${{ secrets.MAKE_TOKEN }}
           POLLINATIONS_TOKEN: ${{ secrets.POLLINATIONS_TOKEN }}
           HORDE_API_KEY: ${{ secrets.HORDE_API_KEY }}
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
           STYLE_V2: "1"
-        run: python render.py tools/ornek_job.json --out out
-      - name: Kaydet
+        run: python -c "import render, voicefix; voicefix.install(render); import runpy; runpy.run_path('pipeline.py', run_name='__main__')"
+
+      - name: Videoyu ornek dalina koy
+        env:
+          GH_TOKEN: ${{ github.token }}
         run: |
-          git config user.name "tarihin-karanligi-bot"
-          git config user.email "tarihin-karanligi-bot@users.noreply.github.com"
-          git fetch -q origin state
-          git checkout -q -B state origin/state
-          mkdir -p sample && cp out/video_ig.mp4 sample/ornek_parlak.mp4
-          git add sample
-          git commit -q -m "Ornek video (yeni gorunum)" && git push -q origin state
+          V=$(ls out/site/*/video_ig.mp4 | head -1)
+          ls -la "$V"
+          API="https://api.github.com/repos/${{ github.repository }}"
+          AUTH="Authorization: Bearer $GH_TOKEN"
+          ACC="Accept: application/vnd.github+json"
+          curl -sf -H "$AUTH" -H "$ACC" "$API/git/ref/heads/ornek" > /dev/null || \
+            curl -sf -H "$AUTH" -H "$ACC" -X POST "$API/git/refs" -d "{\"ref\":\"refs/heads/ornek\",\"sha\":\"$GITHUB_SHA\"}" > /dev/null
+          SHA=$(curl -s -H "$AUTH" -H "$ACC" "$API/contents/ornek.mp4?ref=ornek" | jq -r '.sha // empty')
+          base64 -w0 "$V" > /tmp/v.b64
+          jq -n --rawfile c /tmp/v.b64 --arg s "$SHA" \
+            '{message: "ornek video", content: $c, branch: "ornek"} + (if $s != "" then {sha: $s} else {} end)' > /tmp/put.json
+          curl -sf -H "$AUTH" -H "$ACC" -X PUT "$API/contents/ornek.mp4" --data @/tmp/put.json > /dev/null && echo "ornek.mp4 kaydedildi"

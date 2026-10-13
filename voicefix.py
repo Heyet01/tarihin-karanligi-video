@@ -17,6 +17,92 @@ BASE = "https://huggingface.co/rhasspy/piper-voices/resolve/main/"
 STATE = {"edge_dead": os.environ.get("USE_EDGE") != "1", "model": None}
 
 
+# ---- Turkish text fixes (wrong words / badly written numbers) ----
+import json
+import re
+
+_ONES = ["", "bir", "iki", "üç", "dört", "beş", "altı", "yedi", "sekiz", "dokuz"]
+_TENS_W = ["", "on", "yirmi", "otuz", "kırk", "elli", "altmış", "yetmiş", "seksen", "doksan"]
+
+
+def tr_number(n):
+    """1237 -> bin iki yüz otuz yedi"""
+    if n == 0:
+        return "sıfır"
+    parts = []
+    if n >= 1000000:
+        parts.append(tr_number(n // 1000000) + " milyon")
+        n %= 1000000
+    if n >= 1000:
+        k = n // 1000
+        parts.append("bin" if k == 1 else tr_number(k) + " bin")
+        n %= 1000
+    if n >= 100:
+        h = n // 100
+        parts.append("yüz" if h == 1 else _ONES[h] + " yüz")
+        n %= 100
+    if n >= 10:
+        parts.append(_TENS_W[n // 10])
+        n %= 10
+    if n:
+        parts.append(_ONES[n])
+    return " ".join(parts)
+
+
+_ONE_RE = "|".join(w for w in _ONES[2:])
+_TEN_RE = "|".join(_TENS_W[1:])
+
+
+def fix_bin(text):
+    # "bin iki otuz yedi" -> "bin iki yüz otuz yedi" (a hundreds digit written without "yüz")
+    return re.sub(rf"\b(bin|Bin)\s+({_ONE_RE})\s+(?=({_TEN_RE}|{_ONE_RE})\b)", r"\1 \2 yüz ", str(text))
+
+
+def fix_numbers(text):
+    s = fix_bin(text)
+    # plain digits -> words (years etc.); a suffix after the apostrophe is attached: 1453'te -> ...elli üçte
+    s = re.sub(r"\b(\d{1,7})(?![\d.,])(?:['’](\w+))?",
+               lambda m: tr_number(int(m.group(1))) + (m.group(2) or ""), s)
+    return re.sub(r"\s{2,}", " ", s).strip()
+
+
+def proofread(texts, log):
+    """Ask Gemini to correct spelling / grammar / invented words without changing meaning or length."""
+    key = os.environ.get("GEMINI_API_KEY", "").strip()
+    if not key or not texts:
+        return texts
+    prompt = ("Aşağıdaki JSON listesindeki Türkçe cümleler bir tarih videosunda seslendirilecek. Her cümleyi "
+              "Türkçe yazım ve dil bilgisi açısından düzelt: uydurma veya yanlış türetilmiş kelimeleri doğru, "
+              "yaygın Türkçe kelimelerle değiştir (örn. şüphelilukla -> şüpheyle), yanlış ekleri düzelt, "
+              "sayıları ve yılları doğru şekilde yazıyla yaz (örn. 1237 -> bin iki yüz otuz yedi). Anlamı, "
+              "bilgiyi ve cümle sayısını DEĞİŞTİRME; kelime sayısını en fazla 2 değiştir; doğru olan cümleye "
+              "dokunma. Sadece aynı uzunlukta bir JSON string listesi döndür.\n\n" + json.dumps(texts, ensure_ascii=False))
+    body = json.dumps({"contents": [{"role": "user", "parts": [{"text": prompt}]}],
+                       "generationConfig": {"temperature": 0.1, "responseMimeType": "application/json"}}).encode()
+    for model in ("gemini-flash-latest", "gemini-flash-lite-latest"):
+        try:
+            req = urllib.request.Request(
+                f"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent",
+                data=body, headers={"Content-Type": "application/json", "x-goog-api-key": key})
+            with urllib.request.urlopen(req, timeout=90) as resp:
+                out = json.loads(resp.read())
+            fixed = json.loads(out["candidates"][0]["content"]["parts"][0]["text"])
+            if not (isinstance(fixed, list) and len(fixed) == len(texts)
+                    and all(isinstance(t, str) and t.strip() for t in fixed)):
+                raise ValueError("bad shape")
+            res = []
+            for a, b in zip(texts, fixed):
+                ok = abs(len(a.split()) - len(b.split())) <= 3
+                res.append(b.strip() if ok else a)
+                if ok and b.strip() != a:
+                    log("  dil duzeltme:", a, "->", b.strip())
+            return res
+        except Exception as e:  # noqa: BLE001
+            log("  proofread failed:", model, str(e)[:160])
+            time.sleep(3)
+    return texts
+
+
 def install(r):
     log = r.log
 
@@ -82,3 +168,20 @@ def install(r):
 
     orig = r.synth_voice
     r.synth_voice = synth_voice
+
+    orig_speakable = r.speakable
+    r.speakable = lambda t: fix_numbers(orig_speakable(fix_bin(t)))
+
+    orig_render = r.render
+
+    def render(job, *a, **kw):
+        try:
+            scenes = [sc for sc in job.get("scenes", []) if isinstance(sc, dict) and sc.get("text")]
+            fixed = proofread([fix_bin(sc["text"]) for sc in scenes], log)
+            for sc, t in zip(scenes, fixed):
+                sc["text"] = t
+        except Exception as e:  # noqa: BLE001
+            log("  text fix skipped:", e)
+        return orig_render(job, *a, **kw)
+
+    r.render = render

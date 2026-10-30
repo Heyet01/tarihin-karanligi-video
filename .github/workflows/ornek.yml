@@ -31,7 +31,7 @@ jobs:
           HORDE_API_KEY: ${{ secrets.HORDE_API_KEY }}
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
           STYLE_V2: "1"
-        run: python -c "import render, voicefix; voicefix.install(render); import runpy; runpy.run_path('pipeline.py', run_name='__main__')"
+        run: python -c "import render, voicefix, hookfix; voicefix.install(render); import runpy; runpy.run_path('pipeline.py', run_name='__main__')"
 
       - name: Videoyu ornek dalina koy
         env:

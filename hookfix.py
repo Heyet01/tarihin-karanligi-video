@@ -14,7 +14,9 @@ HOOK_RULES = (" EK KURALLAR (önceki kurallarla çelişirse BUNLAR geçerlidir; 
               "F) Bu kurallar videoyu KISALTMAZ: toplam kelime sayısı BÖLÜM KURALI'ndaki aralıkta kalsın (tek parça videoda "
               "34-42 kelime). Sondan bir önceki sahne gerçek, belgelenmiş ve şaşırtıcı bir TWIST olsun. "
               "G) Günlük konuşma dilinde, sade ve doğru Türkçe yaz; 'gizemle örüldü', 'sırra kadem bastı' gibi süslü, "
-              "mecazlı veya anlamı belirsiz ifadeler kullanma; her cümle tek bir somut bilgi versin.")
+              "mecazlı veya anlamı belirsiz ifadeler kullanma; her cümle tek bir somut bilgi versin. "
+              "H) Şaşırtıcılık için ASLA doğruluktan ödün verme: ilk cümle dahil her iddia belgelenmiş olsun, abartma ve "
+              "olayı başka bir döneme veya kişiye yakıştırma; emin değilsen daha sade ama doğru bir açılış seç.")
 
 if HOOK_RULES not in prompts.SYS:
     prompts.SYS = prompts.SYS + HOOK_RULES

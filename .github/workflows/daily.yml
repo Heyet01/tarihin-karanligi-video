@@ -63,7 +63,7 @@ jobs:
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
           STYLE_V2: "1"
         # voicefix: Microsoft sesi engellenirse bedava Piper sesiyle devam eder
-        run: python -c "import render, voicefix; voicefix.install(render); import runpy; runpy.run_path('pipeline.py', run_name='__main__')"
+        run: python -c "import render, voicefix, hookfix; voicefix.install(render); import runpy; runpy.run_path('pipeline.py', run_name='__main__')"
 
       - uses: actions/configure-pages@v5
         if: steps.guard.outputs.skip != 'true'

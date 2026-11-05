@@ -18,6 +18,10 @@ HOOK_RULES = (" EK KURALLAR (önceki kurallarla çelişirse BUNLAR geçerlidir; 
               "H) Şaşırtıcılık için ASLA doğruluktan ödün verme: ilk cümle dahil her iddia belgelenmiş olsun, abartma ve "
               "olayı başka bir döneme veya kişiye yakıştırma; emin değilsen daha sade ama doğru bir açılış seç.")
 
-if HOOK_RULES not in prompts.SYS:
+# 2026-11-05: turned OFF - Instagram views dropped with these rules (old intro style performs better).
+# Set ENABLED = True to try them again.
+ENABLED = False
+
+if ENABLED and HOOK_RULES not in prompts.SYS:
     prompts.SYS = prompts.SYS + HOOK_RULES
     print("  hook v2 rules active", flush=True)
